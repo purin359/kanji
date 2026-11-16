@@ -751,6 +751,24 @@ dialog::backdrop {
 .selected-tag-filters button { min-height:30px; padding:4px 9px; background:#e7effc; font-size:13px; }
 .tag-filter-selects label { display:flex; flex-direction:column; align-items:flex-start; }
 .tag-filter-selects select { max-width:240px; }
+/* タグ選択プルダウンのはみ出し防止 */
+#memoTagType,
+#memoTagParent {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 親要素も画面幅を超えないようにする */
+.tag-edit-field {
+    min-width: 0;
+    max-width: 100%;
+}
 </style>
  </head>
  <body>
@@ -872,6 +890,19 @@ dialog::backdrop {
      <h3>
       小タグ（最大5つ）
      </h3>
+     <div class="flex" style="margin-top:10px">
+        <label>自由タグ1
+            <input id="freeTag1" type="text" placeholder="自由に入力" oninput="updateFreeTagLimits()">
+        </label>
+
+        <label>自由タグ2
+            <input id="freeTag2" type="text" placeholder="自由に入力" oninput="updateFreeTagLimits()">
+        </label>
+
+        <label>自由タグ3
+            <input id="freeTag3" type="text" placeholder="自由に入力" oninput="updateFreeTagLimits()">
+        </label>
+    </div>
      <div class="flex" id="minorChecks">
      </div>
      <div class="flex" style="margin-top:12px">
@@ -1015,6 +1046,9 @@ dialog::backdrop {
       <button onclick="insertAxis('row')">
        行を追加
       </button>
+      <button onclick="openMemoTagRows()">
+        タグから縦軸を作成
+    </button>
       <button onclick="insertAxis('col')">
        列を追加
       </button>
@@ -1872,6 +1906,10 @@ function showChar(encoded) {
           <strong>${i === 0 ? '★ ' : ''}${esc(e.word)}</strong>
           <div>${esc(p.majors.find(x => x.id === e.majorId)?.name || '未設定')}　${(e.middleIds || []).map(id => esc(p.middles.find(x => x.id === id)?.name || '')).filter(Boolean).join('、') || 'なし'}</div>
           <div>${(e.minorIds || []).map(id => esc(p.minors.find(x => x.id === id)?.name || '')).filter(Boolean).join('、') || 'なし'}</div>
+          <div>
+            自由タグ：
+            ${(e.freeTags || []).filter(Boolean).map(esc).join('、') || 'なし'}
+        </div>
           <div>実機確認済み：${e.verified ? '✓' : '未確認'}</div>
           <button onclick="editEntry('${e.id}')">編集</button>
       </div>`).join('') : '<p>該当する登録はありません</p>'}`);
@@ -1931,6 +1969,11 @@ function renderAdd() {
             $('major').value = entry.majorId;
             $('verified').checked = entry.verified;
 
+            // 編集する単語の自由タグを復元
+            for (let i = 1; i <= 3; i++) {
+                $(`freeTag${i}`).value = entry.freeTags?.[i - 1] || '';
+            }
+
             renderLinkedTags(
                 entry.middleIds || [],
                 entry.minorIds || []
@@ -1963,6 +2006,44 @@ function renderAdd() {
 
     };
 
+}
+
+function countCombinedTags() {
+    const minorCount = document.querySelectorAll(
+        '.minorChoice:checked'
+    ).length;
+
+    const freeCount = [1, 2, 3].filter(i =>
+        $(`freeTag${i}`).value.trim() !== ''
+    ).length;
+
+    return minorCount + freeCount;
+}
+
+function validateTagCount() {
+    if (countCombinedTags() > 5) {
+        alert('小タグと自由タグは合わせて5つまでです');
+        return false;
+    }
+    return true;
+}
+
+function updateFreeTagLimits() {
+    const minorCount = document.querySelectorAll(
+        '.minorChoice:checked'
+    ).length;
+
+    const inputs = [1, 2, 3].map(i => $(`freeTag${i}`));
+
+    const filledCount = inputs.filter(input =>
+        input.value.trim() !== ''
+    ).length;
+
+    inputs.forEach(input => {
+        input.disabled =
+            input.value.trim() === '' &&
+            minorCount + filledCount >= 5;
+    });
 }
 
 /* ========================================
@@ -2086,32 +2167,26 @@ function renderLinkedMinors(selectedMinorIds = null) {
 
     `).join('');
 
-    // 小タグは最大5つ
+    // 小タグ＋自由タグは合計最大5つ
     document.querySelectorAll('.minorChoice').forEach(input => {
-
         input.onchange = () => {
-
-            const checked = document.querySelectorAll(
-                '.minorChoice:checked'
-            );
-
-            if (checked.length > 5) {
-
+            if (!validateTagCount()) {
                 input.checked = false;
-
-                alert('小タグは5つまでです');
-
             }
-
+            updateFreeTagLimits();
         };
-
     });
+
+    updateFreeTagLimits();
 
 }
 
 function resetEditor() {
     editId = null;
     $('words').value = '';
+    for (let i = 1; i <= 3; i++) {
+        $(`freeTag${i}`).value = '';
+    }
     $('verified').checked = false;
     $('addMessage').textContent = '';
 
@@ -2139,6 +2214,14 @@ function saveWords() {
     const minorIds = [...document.querySelectorAll('.minorChoice:checked')]
         .map(input => input.value);
     const verified = $('verified').checked;
+
+    if (!validateTagCount()) return;
+
+    const freeTags = [
+        $('freeTag1').value.trim(),
+        $('freeTag2').value.trim(),
+        $('freeTag3').value.trim()
+    ];
 
     if (!words.length || !majorId) {
         alert('単語と大タグを指定してください');
@@ -2171,6 +2254,7 @@ function saveWords() {
             majorId,
             middleIds,
             minorIds,
+            freeTags: [...freeTags],
             verified,
             seq: old?.seq ?? ++db.sequence,
             createdAt: old?.createdAt ?? new Date().toISOString()
@@ -3180,6 +3264,117 @@ function insertAxis(axis, index) {
 
     persist();
     drawMemo();
+}
+
+// タグから縦軸を作成する設定画面
+function openMemoTagRows() {
+    const p = project();
+
+    dialog(`
+        <h2>タグから縦軸を作成</h2>
+
+        <div class="tag-edit-field">
+            <label>親タグの種類</label>
+            <select id="memoTagType"
+                    onchange="updateMemoTagParents()">
+                <option value="major">大タグ → 中タグ</option>
+                <option value="middle">中タグ → 小タグ</option>
+            </select>
+        </div>
+
+        <div class="tag-edit-field">
+            <label>親タグを選択</label>
+            <select id="memoTagParent"></select>
+        </div>
+
+        <p class="muted">
+            選択したタグに紐付く下位タグを、
+            優先順位順に縦軸へ配置します。
+        </p>
+
+        <div class="flex">
+            <button class="primary"
+                    onclick="applyMemoTagRows()">
+                縦軸に配置
+            </button>
+        </div>
+    `);
+
+    updateMemoTagParents();
+}
+
+// 親タグの候補を更新
+function updateMemoTagParents() {
+    const p = project();
+
+    const type = $('memoTagType').value;
+    const select = $('memoTagParent');
+
+    const tags = type === 'major'
+        ? p.majors
+        : p.middles;
+
+    select.innerHTML = tags.map(tag => `
+        <option value="${esc(tag.id)}">
+            ${esc(tag.name)}
+        </option>
+    `).join('');
+}
+
+// 選択したタグの下位タグを縦軸に配置
+function applyMemoTagRows() {
+    const p = project();
+    const m = memo();
+
+    const type = $('memoTagType').value;
+    const parentId = $('memoTagParent').value;
+
+    if (!parentId) {
+        alert('親タグを選択してください');
+        return;
+    }
+
+    let tags;
+
+    if (type === 'major') {
+        // 大タグに直接紐付く中タグ
+        tags = p.middles.filter(
+            tag => tag.majorId === parentId
+        );
+    } else {
+        // 中タグに直接紐付く小タグ
+        tags = p.minors.filter(
+            tag => tag.middleId === parentId
+        );
+    }
+
+    if (!tags.length) {
+        alert('紐付くタグがありません');
+        return;
+    }
+
+    // 既存の行を置き換えるため確認
+    if (!confirm(
+        `${tags.length}個のタグを縦軸に配置します。\n` +
+        '現在の行とセルの入力内容は置き換えられます。\n' +
+        'よろしいですか？'
+    )) {
+        return;
+    }
+
+    // タグ順番指定の配列順をそのまま使用
+    m.rows = tags.map(tag => tag.name);
+
+    // 行が変わるため既存のセル値を初期化
+    m.cells = {};
+
+    selectedCell = null;
+
+    persist();
+
+    $('dialog').close();
+
+    renderMemo();
 }
 
 function axisMenu(axis, i) {
