@@ -769,6 +769,39 @@ dialog::backdrop {
     min-width: 0;
     max-width: 100%;
 }
+
+/* タグ順番指定：プルダウンのはみ出し防止 */
+#middleDisplayFilter,
+#minorDisplayFilter,
+#newMiddleParent,
+#newMinorParent {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* 表示するタグのラベル */
+#priority .flex > label {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* ラベル内のプルダウン */
+#priority .flex > label > select {
+    flex: 1;
+    min-width: 0;
+}
+
+/* タグ追加欄も画面内に収める */
+#priority .flex > select {
+    min-width: 0;
+    max-width: 100%;
+}
 </style>
  </head>
  <body>
