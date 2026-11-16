@@ -909,9 +909,17 @@ dialog::backdrop {
        大タグ追加
       </button>
      </div>
-     <h3>
-      中タグ（優先順位）
-     </h3>
+     <div class="flex">
+        <h3>中タグ（優先順位）</h3>
+
+        <label>
+            表示するタグ
+            <select id="middleDisplayFilter"
+                    onchange="renderTagManagement()">
+                <option value="all">すべて</option>
+            </select>
+        </label>
+    </div>
      <div id="middleList">
      </div>
      <div class="flex">
@@ -930,9 +938,17 @@ dialog::backdrop {
         </button>
 
     </div>
-     <h3>
-      小タグ（優先順位）
-     </h3>
+     <div class="flex">
+        <h3>小タグ（優先順位）</h3>
+
+        <label>
+            表示するタグ
+            <select id="minorDisplayFilter"
+                    onchange="renderTagManagement()">
+                <option value="all">すべて</option>
+            </select>
+        </label>
+    </div>
      <div id="minorList">
      </div>
      <div class="flex">
@@ -2199,11 +2215,111 @@ function renderTagManagement() {
 
     const p = project();
 
+    // ここから追加
+    const middleFilter = $('middleDisplayFilter');
+    const minorFilter = $('minorDisplayFilter');
+
+    // 初回表示・集計切り替え時は最優先の大タグを選択
+        const projectChanged =
+            renderTagManagement.lastProjectId !== p.id;
+
+        const strongestMajor = p.majors[0];
+
+        const initialValue = strongestMajor
+            ? `major:${strongestMajor.id}`
+            : 'all';
+
+        const middleValue = projectChanged
+            ? initialValue
+            : middleFilter.value;
+
+        const minorValue = projectChanged
+            ? initialValue
+            : minorFilter.value;
+
+        renderTagManagement.lastProjectId = p.id;
+
+    function setFilterOptions(select, options, selected) {
+        select.innerHTML = options.map(option => `
+            <option value="${esc(option.value)}">
+                ${esc(option.label)}
+            </option>
+        `).join('');
+
+        select.value = [...select.options].some(
+            option => option.value === selected
+        ) ? selected : 'all';
+    }
+
+    const majorOptions = p.majors.map(tag => ({
+        value: `major:${tag.id}`,
+        label: `大タグ：${tag.name}`
+    }));
+
+    setFilterOptions(middleFilter, [
+        { value: 'all', label: 'すべて' },
+        { value: 'none', label: '共通のみ' },
+        ...majorOptions
+    ], middleValue);
+
+    setFilterOptions(minorFilter, [
+        { value: 'all', label: 'すべて' },
+        { value: 'none', label: '共通のみ' },
+        ...majorOptions,
+        ...p.middles.map(tag => ({
+            value: `middle:${tag.id}`,
+            label: `中タグ：${tag.name}`
+        }))
+    ], minorValue);
+
     // タグの一覧を生成する
     function createTagList(key) {
 
-        return p[key].map(tag => {
+        let visibleTags = p[key];
 
+        if (key === 'middles') {
+            const filter = middleFilter.value;
+
+            if (filter === 'none') {
+                visibleTags = visibleTags.filter(tag => !tag.majorId);
+            } else if (filter.startsWith('major:')) {
+                const majorId = filter.slice(6);
+
+                visibleTags = visibleTags.filter(
+                    tag => tag.majorId === majorId
+                );
+            }
+        }
+
+        if (key === 'minors') {
+            const filter = minorFilter.value;
+
+            if (filter === 'none') {
+                visibleTags = visibleTags.filter(
+                    tag => !tag.majorId && !tag.middleId
+                );
+            } else if (filter.startsWith('major:')) {
+                const majorId = filter.slice(6);
+
+                visibleTags = visibleTags.filter(tag => {
+                    if (tag.majorId === majorId) return true;
+
+                    const middle = p.middles.find(
+                        m => m.id === tag.middleId
+                    );
+
+                    return middle?.majorId === majorId;
+                });
+            } else if (filter.startsWith('middle:')) {
+                const middleId = filter.slice(7);
+
+                visibleTags = visibleTags.filter(
+                    tag => tag.middleId === middleId
+                );
+            }
+        }
+
+        return visibleTags.map(tag => {
             // 大タグのみ設定色を使用
             const isMajor = key === 'majors';
 
@@ -3319,37 +3435,194 @@ function removeState(i) { const m = memo(); m.states.splice(i, 1); for (const k 
 
 function exportData() { const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'kanji-note-backup.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
-$('importFile').onchange = async (e) => { const f = e.target.files[0]; if (!f)
+let importBackup = null;
 
-    return; try {
+// JSONファイルを選択したとき
+$('importFile').onchange = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
 
-    const v = JSON.parse(await f.text());
+    if (!file) return;
 
-    if (!Array.isArray(v.projects) || !v.projects.length)
+    try {
+        const data = JSON.parse(await file.text());
 
-        throw Error('形式が違います');
+        if (
+            !data ||
+            !Array.isArray(data.projects) ||
+            !data.projects.length
+        ) {
+            throw Error('対応していないJSONファイルです');
+        }
 
-    if (!confirm('現在のデータをバックアップファイルで置き換えますか？'))
+        importBackup = data;
+        openImportDialog();
 
+    } catch (err) {
+        alert('読み込み失敗：' + err.message);
+    }
+};
+
+// 読み込み設定画面
+function openImportDialog() {
+    if (!importBackup) return;
+
+    dialog(`
+        <h2>集計データの読み込み</h2>
+
+        <div class="tag-edit-field">
+            <label>バックアップから読み込む集計</label>
+            <select id="importSource"></select>
+        </div>
+
+        <div class="tag-edit-field">
+            <label>読み込み方法</label>
+            <select id="importMode"
+                onchange="updateImportMode()">
+                <option value="add">
+                    新しい集計として追加
+                </option>
+                <option value="replace">
+                    指定した集計に上書き
+                </option>
+            </select>
+        </div>
+
+        <div class="tag-edit-field"
+            id="importTargetWrap"
+            style="display:none">
+            <label>上書きする集計</label>
+            <select id="importTarget"></select>
+        </div>
+
+        <p class="muted" id="importDescription"></p>
+
+        <div class="flex">
+            <button class="primary"
+                onclick="executeImport()">
+                読み込む
+            </button>
+        </div>
+    `);
+
+    const source = $('importSource');
+    const target = $('importTarget');
+
+    importBackup.projects.forEach((p, i) => {
+        source.add(new Option(p.name || `集計${i + 1}`, i));
+    });
+
+    db.projects.forEach(p => {
+        target.add(new Option(p.name, p.id));
+    });
+
+    target.value = project().id;
+
+    updateImportMode();
+}
+
+// 読み込み方法による表示切り替え
+function updateImportMode() {
+    const replace = $('importMode').value === 'replace';
+
+    $('importTargetWrap').style.display =
+        replace ? 'flex' : 'none';
+
+    $('importDescription').textContent = replace
+        ? '指定した集計だけを上書きします。他の集計は変更しません。'
+        : '現在の集計を残したまま、新しい集計として追加します。';
+}
+
+// 読み込み実行
+function executeImport() {
+    if (!importBackup) return;
+
+    const index = Number($('importSource').value);
+    const mode = $('importMode').value;
+
+    const source = importBackup.projects[index];
+
+    if (!source || !Array.isArray(source.entries)) {
+        alert('集計データの形式が正しくありません');
         return;
+    }
 
-    db = v;
+    // バックアップのデータをコピー
+    const imported = JSON.parse(JSON.stringify(source));
 
-    db.projects.forEach(normalizeProject);
+    normalizeProject(imported);
 
-    db.current = (db.defaultId && db.projects.some(p => p.id === db.defaultId) ? db.defaultId : db.current) || db.projects[0].id;
+    if (mode === 'add') {
+
+        // 新しい集計IDを発行
+        imported.id = uid();
+
+        // 同名の集計がある場合は区別する
+        if (db.projects.some(p => p.name === imported.name)) {
+            imported.name += '（読み込み）';
+        }
+
+        db.projects.push(imported);
+        db.current = imported.id;
+
+    } else if (mode === 'replace') {
+
+        const targetId = $('importTarget').value;
+
+        const targetIndex = db.projects.findIndex(
+            p => p.id === targetId
+        );
+
+        if (targetIndex === -1) {
+            alert('上書き先が見つかりません');
+            return;
+        }
+
+        const targetName = db.projects[targetIndex].name;
+
+        if (!confirm(
+            `「${targetName}」のデータを上書きしますか？\n` +
+            'この集計の現在の登録内容は失われます。'
+        )) {
+            return;
+        }
+
+        // 上書き先のIDと名前を維持
+        imported.id = targetId;
+        imported.name = targetName;
+
+        db.projects[targetIndex] = imported;
+        db.current = targetId;
+
+    } else {
+        return;
+    }
+
+    // 登録順番号の重複を防ぐ
+    const maxSeq = Math.max(
+        0,
+        ...db.projects.flatMap(p =>
+            (p.entries || []).map(e =>
+                Number.isFinite(e.seq) ? e.seq : 0
+            )
+        )
+    );
+
+    db.sequence = Math.max(db.sequence || 0, maxSeq + 1);
+
+    editId = null;
+    selectedCell = null;
 
     persist();
 
+    $('dialog').close();
+
+    importBackup = null;
+
     renderAll();
 
+    alert('集計データを読み込みました');
 }
-
-catch (err) {
-
-    alert('読み込み失敗：' + err.message);
-
-} e.target.value = ''; };
 
 function renderAll() { renderProjects(); renderFilters(); renderAdd(); renderTagManagement(); renderTable(); renderMemo(); }
 
