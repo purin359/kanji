@@ -802,6 +802,50 @@ dialog::backdrop {
     min-width: 0;
     max-width: 100%;
 }
+
+/* 集計メモ：表を横スクロール可能にする */
+#memoTable {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+}
+
+/* 列数が増えても表を無理に縮めない */
+#memoTable table {
+    width: max-content;
+    min-width: 100%;
+    table-layout: auto;
+}
+
+/* 各セルの幅を維持 */
+#memoTable th,
+#memoTable td {
+    min-width: 130px;
+    width: auto;
+    white-space: nowrap;
+    word-break: keep-all;
+}
+
+/* プルダウンや入力欄の幅を維持 */
+#memoTable td select,
+#memoTable td input {
+    min-width: 100px;
+    max-width: none;
+}
+
+/* スクロールバー */
+#memoTable::-webkit-scrollbar {
+    height: 9px;
+}
+
+#memoTable::-webkit-scrollbar-thumb {
+    background: #aab8cc;
+    border-radius: 10px;
+}
 </style>
  </head>
  <body>
