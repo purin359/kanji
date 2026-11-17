@@ -846,6 +846,19 @@ dialog::backdrop {
     background: #aab8cc;
     border-radius: 10px;
 }
+
+/* 今回新しく登録された漢字 */
+.new-kanji {
+    color: #e00000;
+    font-weight: 700;
+    font-size: 1.15em;
+}
+
+/* 追加リザルト */
+#addMessage {
+    scroll-margin-top: 100px;
+    line-height: 1.9;
+}
 </style>
  </head>
  <body>
@@ -948,6 +961,24 @@ dialog::backdrop {
       改行・半角/全角カンマ・読点(、)で単語を区切ります。各単語に含まれるすべての漢字を登録します。
      </div>
      <textarea id="words" placeholder="単語を入力してください。"></textarea>
+     <div class="flex" style="margin-top:12px">
+        <button class="primary" id="saveButton" onclick="saveWords()">
+            追加する
+        </button>
+
+        <label>
+            <input type="checkbox" id="scrollToResult" checked>
+            追加後にリザルトへ移動
+        </label>
+
+        <button onclick="resetEditor()">
+            入力をクリア
+        </button>
+
+        <button class="danger hiddenUI" id="deleteButton" onclick="deleteEdit()">
+            この登録を削除
+        </button>
+    </div>
      <div class="flex">
       <label>
        大タグ
@@ -955,7 +986,7 @@ dialog::backdrop {
        </select>
       </label>
       <label>
-       <input id="verified" type="checkbox"/>
+       <input id="verified" type="checkbox" checked/>
        実機確認済み
       </label>
      </div>
@@ -981,17 +1012,6 @@ dialog::backdrop {
         </label>
     </div>
      <div class="flex" id="minorChecks">
-     </div>
-     <div class="flex" style="margin-top:12px">
-      <button class="primary" id="saveButton" onclick="saveWords()">
-       追加する
-      </button>
-      <button onclick="resetEditor()">
-       入力をクリア
-      </button>
-      <button class="danger hiddenUI" id="deleteButton" onclick="deleteEdit()">
-       この登録を削除
-      </button>
      </div>
      <div class="notice" id="addMessage">
      </div>
@@ -2264,7 +2284,7 @@ function resetEditor() {
     for (let i = 1; i <= 3; i++) {
         $(`freeTag${i}`).value = '';
     }
-    $('verified').checked = false;
+    $('verified').checked = true;
     $('addMessage').textContent = '';
 
     // 入力クリアはタグを変更しない。
@@ -2312,8 +2332,17 @@ function saveWords() {
 
     const messages = [];
 
+    // 保存前に登録されていた漢字
+    const beforeKanji = new Set(
+        p.entries.flatMap(entry => entry.kanji)
+    );
+
+    // 今回入力した単語と抽出漢字を記録
+    const resultWords = [];
+
     for (const word of words) {
         const kanji = [...new Set(chars(word).filter(char => KANJI.test(char)))];
+        resultWords.push({ word, kanji });
 
         if (!kanji.length) {
             messages.push(`${word}：漢字なし`);
@@ -2355,13 +2384,57 @@ function saveWords() {
     pruneLowerPriorityStandard(p);
     persist();
 
-    $('addMessage').textContent = messages.join('\n');
+    // 保存後に実際に登録されている漢字
+    const afterKanji = new Set(
+        p.entries.flatMap(entry => entry.kanji)
+    );
+
+    // 今回新しく追加された漢字
+    const addedKanji = new Set(
+        [...afterKanji].filter(char => !beforeKanji.has(char))
+    );
+
+    // リザルトを作成
+    const resultHtml = resultWords.map(({ word, kanji }) => {
+        if (!kanji.length) {
+            return `<div>${esc(word)}：漢字なし</div>`;
+        }
+
+        const charsHtml = kanji.map(char => {
+            const safe = esc(char);
+
+            if (addedKanji.has(char)) {
+                return `<span class="new-kanji">${safe}</span>`;
+            }
+
+            return safe;
+        }).join('、');
+
+        return `<div>${esc(word)}：${charsHtml}</div>`;
+    }).join('');
+
+    $('addMessage').innerHTML = `
+        <strong>追加リザルト</strong>
+        <div style="margin-top:8px">
+            ${resultHtml}
+        </div>
+        <div class="muted" style="margin-top:8px">
+            新規登録：${addedKanji.size}文字
+        </div>
+    `;
     editId = null;
 
     // 単語だけ消し、大タグ・中タグ・小タグ・実機確認は保持する。
     $('words').value = '';
     renderAdd();
     renderTable();
+
+    if ($('scrollToResult').checked) {
+        $('addMessage').scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }
 }
 
 function deleteEdit() { if (!editId || !confirm('この単語の登録を削除しますか？'))
