@@ -1153,7 +1153,7 @@ dialog::backdrop {
 
 const standard = new Set(GRADES.flatMap(g => Array.from(g)));
 
-const KANJI = /\p{Script=Han}/u;
+const KANJI = /^(?=\p{Script=Han}$)[^\u3005\u3006\u3007\u303B]$/u;
 
 const $ = id => document.getElementById(id), uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
 
