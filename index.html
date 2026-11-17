@@ -1855,23 +1855,64 @@ function renderTable() {
     const juniorHTML = gradeHTML(gradeData[6]);
 
     // 常用漢字外
-    const extras = [...new Set(
-        p.entries.flatMap(e => e.kanji)
-    )]
-        .filter(c =>
-            !standard.has(c) &&
-            filteredOccurrences(p, c, f).length > 0
-        )
-        .filter(c =>
-            matchesSearch(c, filteredOccurrences(p, c, f))
-        )
-        .sort((a, b) =>
-            compare(
-                p,
-                filteredOccurrences(p, a, f)[0],
-                filteredOccurrences(p, b, f)[0]
+    // タグ優先順位 → 登録順 → 単語内の文字順
+
+    const extraInfo = new Map();
+
+    for (const entry of p.entries) {
+
+        entry.kanji.forEach((char, index) => {
+
+            if (standard.has(char)) return;
+
+            const entries = filteredOccurrences(p, char, f);
+
+            if (!entries.some(e => e.id === entry.id)) {
+                return;
+            }
+
+            const previous = extraInfo.get(char);
+
+            // 優先順位が最も高い登録を採用
+            if (
+                !previous ||
+                compare(p, entry, previous.entry) < 0
+            ) {
+                extraInfo.set(char, {
+                    entry,
+                    index
+                });
+            }
+
+        });
+    }
+
+    const extras = [...extraInfo.keys()]
+        .filter(char =>
+            matchesSearch(
+                char,
+                filteredOccurrences(p, char, f)
             )
-        );
+        )
+        .sort((a, b) => {
+
+            const aa = extraInfo.get(a);
+            const bb = extraInfo.get(b);
+
+            // 大タグ → 中タグ → 小タグ → 登録順
+            const priority = compare(
+                p,
+                aa.entry,
+                bb.entry
+            );
+
+            if (priority !== 0) {
+                return priority;
+            }
+
+            // 同じ登録なら単語内の文字順
+            return aa.index - bb.index;
+        });
 
     // 全体のHTML
     const html = `
@@ -2345,6 +2386,19 @@ function saveWords() {
         p.entries.flatMap(entry => entry.kanji)
     );
 
+    // 保存前に、各漢字をどの登録が代表しているか記録
+    const beforeWinners = new Map();
+
+    for (const char of beforeKanji) {
+        if (!standard.has(char)) continue;
+
+        const winner = representative(p, char);
+
+        if (winner) {
+            beforeWinners.set(char, winner.id);
+        }
+    }
+
     // 保存前に存在していた登録ID
     const beforeEntryIds = new Set(
         p.entries.map(entry => entry.id)
@@ -2352,6 +2406,7 @@ function saveWords() {
 
     // 今回入力した単語と抽出漢字を記録
     const resultWords = [];
+    const savedEntryIds = new Set();
 
     for (const word of words) {
         const kanji = [...new Set(chars(word).filter(char => KANJI.test(char)))];
@@ -2385,6 +2440,8 @@ function saveWords() {
             p.entries.push(entry);
         }
 
+        savedEntryIds.add(entry.id);
+
         messages.push(`${kanji.join('、')} を${old ? '更新' : '追加'}しました`);
 
         for (const char of kanji) {
@@ -2406,6 +2463,25 @@ function saveWords() {
     const addedKanji = new Set(
         [...afterKanji].filter(char => !beforeKanji.has(char))
     );
+
+    // 優先順位によって既存の常用漢字が上書きされたか判定
+    const overwrittenKanji = new Set();
+
+    for (const char of afterKanji) {
+        if (!standard.has(char)) continue;
+
+        const beforeId = beforeWinners.get(char);
+        const afterEntry = representative(p, char);
+
+        if (
+            beforeId &&
+            afterEntry &&
+            beforeId !== afterEntry.id &&
+            savedEntryIds.has(afterEntry.id)
+        ) {
+            overwrittenKanji.add(char);
+        }
+    }
 
     // 今回保存した新規エントリー
     const newEntries = p.entries.filter(
@@ -2432,6 +2508,10 @@ function saveWords() {
                 return `<span class="new-kanji">${safe}</span>`;
             }
 
+            if (overwrittenKanji.has(char)) {
+                return `<span class="new-kanji">${safe}（上書き）</span>`;
+            }
+
             if (extraKanji.has(char)) {
                 return `${safe}<span class="extra-kanji-label">（常用外追加）</span>`;
             }
@@ -2451,6 +2531,9 @@ function saveWords() {
 
         <div class="muted" style="margin-top:8px">
             新規登録：${addedKanji.size}文字
+            ${overwrittenKanji.size
+                ? ` / 上書き：${overwrittenKanji.size}文字`
+                : ''}
             ${extraKanji.size
                 ? ` / 常用外追加：${extraKanji.size}文字`
                 : ''}
