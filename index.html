@@ -1831,7 +1831,7 @@ function renderTable() {
             <div class="grade"
                  onclick="toggleGrade('${g.id}')">
                 ${expanded[g.id] ? '▶' : '▼'}
-                ${g.label} (${g.used}/${g.total})
+                ${g.label} (${g.used}/${g.total}) ${((g.used / g.total) * 100).toFixed(1)}%
             </div>
 
             <div class="grid"
@@ -1920,7 +1920,7 @@ function renderTable() {
         <div class="grade"
              onclick="toggleGrade('standard')">
             ${expanded.standard ? '▶' : '▼'}
-            常用漢字 (${standardUsed}/${standardTotal})
+            常用漢字 (${standardUsed}/${standardTotal}) ${((standardUsed / standardTotal) * 100).toFixed(1)}%
         </div>
 
         <div id="standard"
@@ -1930,7 +1930,7 @@ function renderTable() {
                  onclick="toggleGrade('elementary')">
                 ${expanded.elementary ? '▶' : '▼'}
                 小学生で習う漢字
-                (${elementaryUsed}/${elementaryTotal})
+                (${elementaryUsed}/${elementaryTotal}) ${((elementaryUsed / elementaryTotal) * 100).toFixed(1)}%
             </div>
 
             <div id="elementary"
