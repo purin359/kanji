@@ -3551,11 +3551,36 @@ function addMiddle() {
         );
 
         if (lastIndex === -1) {
-            // 同じ大タグの中タグがまだない場合
-            p.middles.push(newTag);
+
+            // 追加先の大タグの優先順位
+            const majorIndex = p.majors.findIndex(
+                tag => tag.id === majorId
+            );
+
+            // 自分より優先順位が低い大タグの
+            // 最初の中タグを探す
+            const insertIndex = p.middles.findIndex(tag => {
+
+                const index = p.majors.findIndex(
+                    major => major.id === tag.majorId
+                );
+
+                return index > majorIndex && index !== -1;
+
+            });
+
+            if (insertIndex === -1) {
+                p.middles.push(newTag);
+            } else {
+                p.middles.splice(insertIndex, 0, newTag);
+            }
+
         } else {
-            // 同じ大タグの最後に挿入
+
+            // 同じ大タグの中タグがある場合は
+            // その最後に追加
             p.middles.splice(lastIndex + 1, 0, newTag);
+
         }
 
     }
