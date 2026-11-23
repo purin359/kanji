@@ -854,10 +854,24 @@ dialog::backdrop {
     font-size: 1.15em;
 }
 
-/* 追加リザルト */
+/* 追加リザルトをコンパクトに */
 #addMessage {
-    scroll-margin-top: 100px;
-    line-height: 1.9;
+    scroll-margin-top: 80px;
+    line-height: 1.45;
+    padding: 8px 10px;
+    margin: 6px 0;
+    white-space: normal;
+}
+
+#addMessage > div {
+    margin-top: 3px !important;
+    margin-bottom: 0 !important;
+}
+
+#addMessage .undo-button {
+    min-height: 28px;
+    padding: 4px 9px;
+    font-size: 12px;
 }
 
 /* 既存の常用漢字外を追加したときの表示 */
@@ -1075,6 +1089,15 @@ dialog::backdrop {
        <label>大タグ <select id="filterMajor" multiple size="3" style="min-width:130px"></select></label>
        <label>中タグ <select id="filterMiddle" multiple size="3" style="min-width:130px"></select></label>
        <label>小タグ <select id="filterMinor" multiple size="3" style="min-width:130px"></select></label>
+       <label id="freeTagFilterWrap" style="display:none">
+            自由タグ
+            <select
+                id="filterFreeTag"
+                multiple
+                size="3"
+                style="min-width:130px"
+            ></select>
+        </label>
       </div>
       <div class="muted">上位タグを選ぶと下位の候補を限定します。候補をクリックすると選択・解除できます。</div>
      </div>
@@ -1249,13 +1272,10 @@ dialog::backdrop {
       <label>
        マス形式
        <select id="cellMode">
-        <option value="check">
-         チェックボックス
-        </option>
-        <option value="select">
-         プルダウン
-        </option>
-       </select>
+            <option value="check">チェックボックス</option>
+            <option value="select">プルダウン</option>
+            <option value="text">自由入力</option>
+        </select>
       </label>
       <label>
        状態で絞り込み
@@ -1284,8 +1304,25 @@ dialog::backdrop {
         行・列の名前をクリックすると、名前変更・挿入・削除・移動ができます。
         列では表示形式やプルダウンの選択肢も設定できます。
     </p>
-     <div class="tablewrap" id="memoTable">
-     </div>
+     <div class="flex" style="margin:10px 0; gap:8px">
+        <input
+            id="memoRowSearch"
+            type="search"
+            class="grow"
+            placeholder="縦軸の名前を検索"
+            oninput="searchMemoRow(false)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();searchMemoRow(true)}"
+        >
+
+        <button type="button" onclick="searchMemoRow(true)">
+            決定
+        </button>
+
+        <span id="memoRowSearchResult" class="muted"></span>
+    </div>
+
+    <div class="tablewrap" id="memoTable"></div>
+
     </div>
    </section>
   </main>
@@ -1426,7 +1463,50 @@ $('project').onchange = e => { db.current = e.target.value; editId = null; selec
 
 $('defaultProject').onchange = e => { db.defaultId = e.target.checked ? project().id : null; persist(); };
 
-function manageProjects() { dialog(`<h2>集計タグ管理</h2>${db.projects.map(p => `<div class="item">${esc(p.name)} <button onclick="renameProject('${p.id}')">名前変更</button> <button class="danger" onclick="removeProject('${p.id}')">削除</button></div>`).join('')}<p><button class="primary" onclick="createProject()">集計タグを追加</button></p>`); }
+function manageProjects() {
+    dialog(`
+        <div style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            margin-bottom:20px;
+        ">
+            <h2 style="margin:0">
+                集計タグ管理
+            </h2>
+
+            <button
+                type="button"
+                class="dialog-back-button"
+                onclick="$('dialog').close()"
+            >
+                ← 戻る
+            </button>
+        </div>
+
+        ${db.projects.map(p => `
+            <div class="item">
+                ${esc(p.name)}
+                <button onclick="renameProject('${p.id}')">
+                    名前変更
+                </button>
+                <button
+                    class="danger"
+                    onclick="removeProject('${p.id}')"
+                >
+                    削除
+                </button>
+            </div>
+        `).join('')}
+
+        <p>
+            <button class="primary" onclick="createProject()">
+                集計タグを追加
+            </button>
+        </p>
+    `);
+}
 
 function createProject() { const name = prompt('新しい集計タグ名'); if (!name?.trim())
 
@@ -1535,6 +1615,34 @@ function tagVisibleForScope(kind, tag, selectedMajor, selectedMiddle) {
 
 const previousTagSelection = { Major: [], Middle: [], Minor: [] };
 
+// 使用されている自由タグを自動取得
+function renderFreeTagFilter() {
+    const p = project();
+    const select = $('filterFreeTag');
+    const wrap = $('freeTagFilterWrap');
+
+    // 現在の選択を保存
+    const previous = filterSelected('filterFreeTag');
+
+    const tags = [...new Set(
+        p.entries.flatMap(entry =>
+            (entry.freeTags || [])
+                .map(tag => String(tag).trim())
+                .filter(Boolean)
+        )
+    )].sort((a, b) => a.localeCompare(b, 'ja'));
+
+    // 自由タグが存在しない場合は非表示
+    wrap.style.display = tags.length ? '' : 'none';
+
+    select.innerHTML = tags.map(tag => `
+        <option value="${esc(tag)}"
+            ${previous.includes(tag) ? 'selected' : ''}>
+            ${esc(tag)}
+        </option>
+    `).join('');
+}
+
 function renderFilters() {
     const p = project();
     const old = Object.fromEntries(tagKinds.map(x => [x.kind, filterSelected('filter'+x.kind)]));
@@ -1593,7 +1701,34 @@ function onTagFilterChange(event) {
     renderTable();
 }
 
-for(const {kind} of tagKinds) $('filter'+kind).addEventListener('change',onTagFilterChange);
+// 大・中・小タグをクリックで選択・解除
+for (const {kind} of tagKinds) {
+
+    const select = $('filter' + kind);
+
+    select.addEventListener('mousedown', e => {
+
+        if (e.target.tagName !== 'OPTION') return;
+
+        e.preventDefault();
+
+        const option = e.target;
+        const wasSelected = option.selected;
+
+        // 同じ種類のタグは1つだけ選択
+        for (const other of select.options) {
+            other.selected = false;
+        }
+
+        // 再クリックなら解除
+        option.selected = !wasSelected;
+
+        select.focus();
+
+        onTagFilterChange();
+    });
+
+}
 
 function openTagSuggestions() {
 
@@ -1778,32 +1913,93 @@ $('search').onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) searchKa
 
 // 選択したタグIDを条件として扱う（入力欄は候補選択専用）。
 function currentTagFilter() {
-    const result={};
-    for(const [key,kind] of [['major','Major'],['middle','Middle'],['minor','Minor']]) {
-        result[key]={selected:filterSelected('filter'+kind)};
+    const result = {};
+
+    for (const [key, kind] of [
+        ['major', 'Major'],
+        ['middle', 'Middle'],
+        ['minor', 'Minor']
+    ]) {
+        result[key] = {
+            selected: filterSelected('filter' + kind)
+        };
     }
-    result.active=['major','middle','minor'].some(k=>result[k].selected.length>0);
+
+    result.freeTags = filterSelected('filterFreeTag');
+
+    result.active =
+        ['major', 'middle', 'minor'].some(
+            key => result[key].selected.length > 0
+        ) ||
+        result.freeTags.length > 0;
+
     return result;
 }
 
 function matchesTagFilter(entry, f) {
-    for (const key of ['major','middle','minor']) {
+
+    for (const key of ['major', 'middle', 'minor']) {
+
         const { selected } = f[key];
-        const ids = key === 'major' ? [entry.majorId] : (entry[key + 'Ids'] || []);
-        if (selected.length && !ids.some(id => selected.includes(id))) return false;
+
+        const ids = key === 'major'
+            ? [entry.majorId]
+            : (entry[key + 'Ids'] || []);
+
+        if (
+            selected.length &&
+            !ids.some(id => selected.includes(id))
+        ) {
+            return false;
+        }
     }
+
+    // 自由タグの絞り込み（複数選択はOR）
+    if (f.freeTags.length) {
+        const tags = (entry.freeTags || [])
+            .map(tag => String(tag).trim());
+
+        if (!f.freeTags.some(tag => tags.includes(tag))) {
+            return false;
+        }
+    }
+
     return true;
 }
+
+$('filterFreeTag').addEventListener('mousedown', e => {
+    if (e.target.tagName !== 'OPTION') return;
+
+    e.preventDefault();
+
+    const option = e.target;
+    option.selected = !option.selected;
+
+    $('filterFreeTag').focus();
+    renderTable();
+});
 
 function filteredOccurrences(p, c, f = currentTagFilter()) {
     return occurrences(p, c).filter(e => matchesTagFilter(e, f));
 }
 
 function clearTagFilters() {
-    $('tagSearchInput').value='';
-    for(const {kind} of tagKinds) {
-        for(const option of $('filter'+kind).options) option.selected=false;
+
+    $('tagSearchInput').value = '';
+
+    for (const {kind} of tagKinds) {
+        for (const option of $('filter' + kind).options) {
+            option.selected = false;
+        }
     }
+
+    // 自由タグも解除
+    $('filterFreeTag').value = '';
+
+    for (const option of $('filterFreeTag').options) {
+        option.selected = false;
+    }
+
     renderFilters();
     renderTable();
     closeTagSuggestions();
@@ -1819,7 +2015,10 @@ function updateTagDisplayControls() {
     const mode = $('tagDisplayMode');
     const higher = $('includeHigherMajors');
 
-    const hasSubTag = middle.length > 0 || minor.length > 0;
+    const hasSubTag =
+        middle.length > 0 ||
+        minor.length > 0 ||
+        !!$('filterFreeTag').value;
 
     // 中・小タグが選択されたら登場モードに固定
     mode.disabled = hasSubTag;
@@ -1883,6 +2082,7 @@ function getMissingMajorIds() {
 
 function renderTable() {
 
+    renderFreeTagFilter();
     updateTagDisplayControls();
 
     const p = project();
@@ -2191,11 +2391,18 @@ function showChar(encoded) {
       ${entries.length ? entries.map((e,i) => `<div class="subrow" data-entry="${e.id}">
           <strong>${i === 0 ? '★ ' : ''}${esc(e.word)}</strong>
           <div>${esc(p.majors.find(x => x.id === e.majorId)?.name || '未設定')}　${(e.middleIds || []).map(id => esc(p.middles.find(x => x.id === id)?.name || '')).filter(Boolean).join('、') || 'なし'}</div>
-          <div>${(e.minorIds || []).map(id => esc(p.minors.find(x => x.id === id)?.name || '')).filter(Boolean).join('、') || 'なし'}</div>
-          <div>
-            自由タグ：
-            ${(e.freeTags || []).filter(Boolean).map(esc).join('、') || 'なし'}
-        </div>
+          <div>${
+                [
+                    ...(e.minorIds || []).map(id =>
+                        p.minors.find(x => x.id === id)?.name || ''
+                    ),
+                    ...(e.freeTags || [])
+                ]
+                .map(name => String(name).trim())
+                .filter(Boolean)
+                .map(esc)
+                .join('　') || 'なし'
+            }</div>
           <div>実機確認済み：${e.verified ? '✓' : '未確認'}</div>
           <button onclick="editEntry('${e.id}')">編集</button>
       </div>`).join('') : '<p>該当する登録はありません</p>'}`);
@@ -2658,6 +2865,40 @@ function saveWords() {
         )
     );
 
+    // リザルトに設定タグを表示
+    const majorName = p.majors.find(
+        tag => tag.id === majorId
+    )?.name || 'なし';
+
+    const middleNames = middleIds.map(id =>
+        p.middles.find(tag => tag.id === id)?.name
+    ).filter(Boolean);
+
+    const minorNames = minorIds.map(id =>
+        p.minors.find(tag => tag.id === id)?.name
+    ).filter(Boolean);
+
+    const resultTagsHtml = `
+        <div style="
+            margin:6px 0;
+            font-size:13px;
+            line-height:1.5;
+            color:#52627a;
+            overflow-wrap:anywhere;
+        ">
+            <strong>タグ：</strong>
+            ${[
+                majorName,
+                ...middleNames,
+                ...minorNames
+            ].map(esc).join(' › ')}
+
+            ${freeTags.filter(Boolean).length
+                ? ' ｜ ' + freeTags.filter(Boolean).map(esc).join('・')
+                : ''}
+        </div>
+    `;
+
     // リザルト表示
     const resultHtml = resultWords.map(({ word, kanji }) => {
         if (!kanji.length) {
@@ -2686,12 +2927,12 @@ function saveWords() {
     }).join('');
 
         $('addMessage').innerHTML = `
-            <div class="flex"
-                style="display:flex;
-                        align-items:center;
-                        justify-content:space-between;
-                        gap:10px;">
-
+            <div style="
+                display:flex;
+                align-items:center;
+                justify-content:space-between;
+                gap:8px;
+            ">
                 <strong>追加リザルト</strong>
 
                 <button
@@ -2701,23 +2942,24 @@ function saveWords() {
                 >
                     ↶ 取り消し
                 </button>
-
             </div>
 
-            <div style="margin-top:8px">
+            ${resultTagsHtml}
+
+            <div style="margin-top:3px">
                 ${resultHtml}
             </div>
 
-        <div class="muted" style="margin-top:8px">
-            新規登録：${addedKanji.size}文字
-            ${overwrittenKanji.size
-                ? ` / 上書き：${overwrittenKanji.size}文字`
-                : ''}
-            ${extraKanji.size
-                ? ` / 常用外追加：${extraKanji.size}文字`
-                : ''}
-        </div>
-    `;
+            <div class="muted" style="margin-top:3px">
+                新規登録：${addedKanji.size}文字
+                ${overwrittenKanji.size
+                    ? ` / 上書き：${overwrittenKanji.size}文字`
+                    : ''}
+                ${extraKanji.size
+                    ? ` / 常用外追加：${extraKanji.size}文字`
+                    : ''}
+            </div>
+        `;
     editId = null;
 
     // 単語だけ消し、大タグ・中タグ・小タグ・実機確認は保持する。
@@ -3811,7 +4053,7 @@ function drawMemo() {
 
     m.rows.forEach((r, i) => {
         html += `
-            <tr>
+            <tr data-memo-row="${i}">
                 <th>
                     <button onclick="axisMenu('row',${i})">
                         ${esc(r)}
@@ -3830,7 +4072,21 @@ function drawMemo() {
 
             let content;
 
-            if (mode === 'check') {
+            if (mode === 'text') {
+                content = `
+                    <input
+                        type="text"
+                        value="${esc(String(raw ?? ''))}"
+                        placeholder="自由入力"
+                        oninput="setTextCell('${key}',this.value)"
+                        style="
+                            width:100%;
+                            min-width:100px;
+                            background:#fff;
+                        "
+                    >
+                `;
+            } else if (mode === 'check') {
                 content = `
                     <label>
                         <input type="checkbox"
@@ -3853,8 +4109,8 @@ function drawMemo() {
 
             html += `
                 <td style="
-                    background:${state.color};
-                    ${filter !== 'all' && String(v) !== filter
+                    background:${mode === 'text' ? '#ffffff' : state.color};
+                    ${mode !== 'text' && filter !== 'all' && String(v) !== filter
                         ? 'opacity:.22;' : ''}
                 ">
                     ${content}
@@ -3866,9 +4122,90 @@ function drawMemo() {
     });
 
     $('memoTable').innerHTML = html + '</tbody></table>';
+
+    if ($('memoRowSearch').value.trim()) {
+        searchMemoRow();
+    }
+}
+
+function searchMemoRow(jump = false) {
+    const input = $('memoRowSearch');
+    const result = $('memoRowSearchResult');
+    const tableWrap = $('memoTable');
+
+    const keyword = normalizeMemoSearch(input.value);
+
+    // 前回の枠を解除
+    tableWrap.querySelectorAll('tr[data-memo-row]').forEach(tr => {
+        tr.style.outline = '';
+        tr.style.outlineOffset = '';
+    });
+
+    if (!keyword) {
+        result.textContent = '';
+        return;
+    }
+
+    const m = memo();
+
+    // 正規化した文字列で部分一致検索
+    const index = m.rows.findIndex(name =>
+        normalizeMemoSearch(name).includes(keyword)
+    );
+
+    if (index === -1) {
+        result.textContent = '該当なし';
+        return;
+    }
+
+    const row = tableWrap.querySelector(
+        `tr[data-memo-row="${index}"]`
+    );
+
+    if (!row) return;
+
+    // 入力中も該当行に枠を付ける
+    row.style.outline = '2px solid #3278df';
+    row.style.outlineOffset = '-2px';
+
+    result.textContent = `${index + 1}行目`;
+
+    // 決定時だけスクロール
+    if (jump) {
+        const header = tableWrap.querySelector('thead');
+        const headerHeight = header
+            ? header.getBoundingClientRect().height
+            : 0;
+
+        const rowTop = row.getBoundingClientRect().top;
+        const wrapTop = tableWrap.getBoundingClientRect().top;
+
+        tableWrap.scrollTop += rowTop - wrapTop - headerHeight;
+    }
+}
+
+// 縦軸検索用の文字正規化
+function normalizeMemoSearch(text) {
+    return String(text ?? '')
+        .normalize('NFKC')
+        .toLocaleLowerCase('ja')
+        .replace(/[\u3041-\u3096]/g, c =>
+            String.fromCharCode(c.charCodeAt(0) + 0x60)
+        )
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 function setCell(key, v) { memo().cells[key] = v; selectedCell = key; persist(); drawMemo(); }
+
+function setTextCell(key, value) {
+    const m = memo();
+
+    m.cells[key] = value;
+    selectedCell = key;
+
+    persist();
+}
 
 function newMemo() {
 
@@ -4084,7 +4421,25 @@ function axisMenu(axis, i) {
     const mode = axis === 'col' ? m.colModes[i] : null;
 
     dialog(`
-        <h2>${axis === 'row' ? '行' : '列'}：${esc(arr[i])}</h2>
+        <div style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            margin-bottom:16px;
+        ">
+            <h2 style="margin:0">
+                ${axis === 'row' ? '行' : '列'}：${esc(arr[i])}
+            </h2>
+
+            <button
+                type="button"
+                class="dialog-back-button"
+                onclick="$('dialog').close()"
+            >
+                ← 戻る
+            </button>
+        </div>
 
         ${axis === 'col' ? `
             <div class="flex" style="margin-bottom:12px">
@@ -4098,6 +4453,10 @@ function axisMenu(axis, i) {
                         <option value="select"
                             ${mode === 'select' ? 'selected' : ''}>
                             プルダウン
+                        </option>
+                        <option value="text"
+                            ${mode === 'text' ? 'selected' : ''}>
+                            自由入力
                         </option>
                     </select>
                 </label>
@@ -4126,11 +4485,31 @@ function setColMode(i, mode) {
     const m = memo();
     normalizeMemoColumns(m);
 
+    const oldMode = m.colModes[i];
     m.colModes[i] = mode;
 
+    // テキスト形式から状態形式に戻すときは
+    // 数値以外の内容を初期値にする
+    if (oldMode === 'text' && mode !== 'text') {
+        m.rows.forEach((_, r) => {
+            const key = `${r}:${i}`;
+            const value = m.cells[key];
+
+            if (
+                typeof value !== 'number' ||
+                !Number.isInteger(value) ||
+                value < 0
+            ) {
+                m.cells[key] = 0;
+            }
+        });
+    }
+
+    // チェックボックスは0または1のみ
     if (mode === 'check') {
         m.rows.forEach((_, r) => {
             const key = `${r}:${i}`;
+
             if ((m.cells[key] ?? 0) > 1) {
                 m.cells[key] = 0;
             }
