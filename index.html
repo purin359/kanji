@@ -1644,22 +1644,45 @@ function renderFreeTagFilter() {
 }
 
 function renderFilters() {
+
     const p = project();
-    const old = Object.fromEntries(tagKinds.map(x => [x.kind, filterSelected('filter'+x.kind)]));
-    const selectedMajor = old.Major.filter(id => p.majors.some(t => t.id === id));
-    const selectedMiddle = old.Middle.filter(id => p.middles.some(t => t.id === id && tagVisibleForScope('Middle',t,selectedMajor,[])));
-    for (const {kind,key} of tagKinds) {
-        const items = p[key].filter(tag => tagVisibleForScope(kind,tag,selectedMajor,selectedMiddle));
-        $('filter'+kind).innerHTML = items.map(t => `<option value="${esc(t.id)}" ${old[kind].includes(t.id)?'selected':''}>${esc(t.name)}</option>`).join('');
+
+    // 大 → 中 → 小の順番で候補を更新
+    for (const {kind, key} of tagKinds) {
+
+        const select = $('filter' + kind);
+        const old = filterSelected('filter' + kind);
+
+        const selectedMajor = filterSelected('filterMajor');
+        const selectedMiddle = filterSelected('filterMiddle');
+
+        const items = p[key].filter(tag =>
+            tagVisibleForScope(
+                kind,
+                tag,
+                selectedMajor,
+                selectedMiddle
+            )
+        );
+
+        // 有効な選択肢を1つだけ維持
+        const keep = old.find(id =>
+            items.some(tag => tag.id === id)
+        );
+
+        select.innerHTML = items.map(t => `
+            <option
+                value="${esc(t.id)}"
+                ${t.id === keep ? 'selected' : ''}
+            >
+                ${esc(t.name)}
+            </option>
+        `).join('');
+
+        previousTagSelection[kind] =
+            filterSelected('filter' + kind);
     }
-    for (const {kind} of tagKinds) {
-        const select = $('filter'+kind);
-        const chosen = [...select.selectedOptions];
-        if (chosen.length > 1) {
-            for (const option of chosen.slice(0,-1)) option.selected = false;
-        }
-        previousTagSelection[kind] = filterSelected('filter'+kind);
-    }
+
     renderSelectedTagFilters();
     updateTagSuggestions(false);
 }
@@ -1687,47 +1710,62 @@ function toggleTagFilter(kind,id) {
 }
 
 function onTagFilterChange(event) {
-    if (event?.target?.id?.startsWith('filter')) {
-        const select = event.target;
-        const kind = select.id.slice('filter'.length);
+
+    for (const {kind} of tagKinds) {
+
+        const select = $('filter' + kind);
         const chosen = [...select.selectedOptions];
+
         if (chosen.length > 1) {
-            const newlySelected = chosen.find(option => !previousTagSelection[kind].includes(option.value));
-            const keep = newlySelected || chosen[chosen.length-1];
-            for (const option of select.options) option.selected = option === keep;
+
+            const newlySelected = chosen.find(option =>
+                !previousTagSelection[kind].includes(option.value)
+            );
+
+            const keep =
+                newlySelected || chosen[chosen.length - 1];
+
+            for (const option of select.options) {
+                option.selected = option === keep;
+            }
         }
     }
+
     renderFilters();
     renderTable();
 }
 
 // 大・中・小タグをクリックで選択・解除
+// 大・中・小タグは各1つのみ選択可能
 for (const {kind} of tagKinds) {
 
     const select = $('filter' + kind);
 
+    // クリックによる選択・解除
     select.addEventListener('mousedown', e => {
 
-        if (e.target.tagName !== 'OPTION') return;
+        const option = e.target.closest('option');
+        if (!option) return;
 
         e.preventDefault();
 
-        const option = e.target;
         const wasSelected = option.selected;
 
-        // 同じ種類のタグは1つだけ選択
         for (const other of select.options) {
             other.selected = false;
         }
 
-        // 再クリックなら解除
-        option.selected = !wasSelected;
+        if (!wasSelected) {
+            option.selected = true;
+        }
 
         select.focus();
-
         onTagFilterChange();
+
     });
 
+    // スマホ・キーボードなどによる選択変更にも対応
+    select.addEventListener('change', onTagFilterChange);
 }
 
 function openTagSuggestions() {
@@ -1976,6 +2014,10 @@ $('filterFreeTag').addEventListener('mousedown', e => {
     option.selected = !option.selected;
 
     $('filterFreeTag').focus();
+    renderTable();
+});
+
+$('filterFreeTag').addEventListener('change', () => {
     renderTable();
 });
 
