@@ -1031,7 +1031,7 @@ dialog::backdrop {
   <header>
    <div class="top">
     <strong>
-     汎用漢字集計(引継ぎ)
+     汎用漢字集計
     </strong>
     <select id="project">
     </select>
@@ -1388,101 +1388,24 @@ const freshMemo = () => ({
 const freshProject = (name = '集計A') => ({ id: uid(), name, middles: [], majors: [{ id: uid(), name: 'タグ1', color: '#dbeafe' }, { id: uid(), name: 'タグ2', color: '#ffe5c1' }], minors: [], entries: [], memos: [freshMemo()], memoId: null });
 
 let db;
-let storageDB = null;
-let saveQueue = Promise.resolve();
-let saveFailed = false;
-let pendingSaves = 0;
 
-function openStorageDB() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open('KanjiNoteDB', 1);
+try {
 
-        request.onupgradeneeded = () => {
-            const database = request.result;
+    db = JSON.parse(localStorage.getItem('kanjiNoteV1'));
 
-            if (!database.objectStoreNames.contains('storage')) {
-                database.createObjectStore('storage');
-            }
-        };
-
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-        request.onblocked = () => reject(
-            new Error('別のタブでデータベースが使用されています')
-        );
-    });
 }
 
-function readStorage() {
-    return new Promise((resolve, reject) => {
-        const transaction = storageDB.transaction('storage', 'readonly');
-        const request = transaction.objectStore('storage').get('main');
+catch { }
 
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-        transaction.onabort = () => reject(transaction.error);
-    });
-}
+if (!db || !Array.isArray(db.projects)) {
 
-function writeStorage(data) {
-    return new Promise((resolve, reject) => {
-        const transaction = storageDB.transaction('storage', 'readwrite');
-
-        transaction.objectStore('storage').put(data, 'main');
-
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
-        transaction.onabort = () => reject(transaction.error);
-    });
-}
-
-function validDatabase(data) {
-    return data &&
-        Array.isArray(data.projects) &&
-        data.projects.length > 0;
-}
-
-async function loadDatabase() {
-    storageDB = await openStorageDB();
-
-    const saved = await readStorage();
-
-    // IndexedDBに保存済みの場合
-    if (saved !== undefined) {
-        if (!validDatabase(saved)) {
-            throw new Error('保存データの形式が正しくありません');
-        }
-
-        return saved;
-    }
-
-    // 初回のみlocalStorageから移行
-    const oldData = localStorage.getItem('kanjiNoteV1');
-
-    if (oldData !== null) {
-        const parsed = JSON.parse(oldData);
-
-        if (!validDatabase(parsed)) {
-            throw new Error('旧データの形式が正しくありません');
-        }
-
-        await writeStorage(parsed);
-
-        console.log('IndexedDBへの移行が完了しました');
-
-        return parsed;
-    }
-
-    // 保存データが存在しない場合のみ新規作成
     const p = freshProject();
 
-    return {
-        projects: [p],
-        current: p.id,
-        defaultId: p.id,
-        sequence: 0
-    };
+    db = { projects: [p], current: p.id, defaultId: p.id, sequence: 0 };
+
 }
+
+;
 
 let editId = null, selectedCell = null, tab = 'table', expanded = {};
 
@@ -1515,51 +1438,21 @@ function normalizeProject(p) {
 
 }
 
+db.projects.forEach(normalizeProject);
+
 const project = () => db.projects.find(p => p.id === db.current) || db.projects[0];
 
-const persist = () => {
-    if (!storageDB || !db) return Promise.resolve(false);
+const persist = () => { try {
 
-    // 保存時点のデータをコピー
-    const snapshot = JSON.parse(JSON.stringify(db));
+    localStorage.setItem('kanjiNoteV1', JSON.stringify(db));
 
-    pendingSaves++;
+}
 
-    // 保存処理を順番に実行
-    saveQueue = saveQueue
-        .then(() => writeStorage(snapshot))
-        .then(() => {
-            saveFailed = false;
-            return true;
-        })
-        .catch(e => {
-            console.error('IndexedDB保存エラー:', e);
+catch (e) {
 
-            if (!saveFailed) {
-                alert(
-                    '保存できませんでした。\n' +
-                    'JSONバックアップを保存してください。\n\n' +
-                    'エラー：' + (e?.message || e)
-                );
-            }
+    alert('保存できませんでした。ブラウザの空き容量やプライベートモードを確認し、JSONバックアップを保存してください。');
 
-            saveFailed = true;
-            return false;
-        })
-        .finally(() => {
-            pendingSaves--;
-        });
-
-    return saveQueue;
-};
-
-// 保存完了前にページを閉じる場合の警告
-window.addEventListener('beforeunload', e => {
-    if (pendingSaves > 0 || saveFailed) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
+} };
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -5264,51 +5157,15 @@ function executeImport() {
 
 function renderAll() { renderProjects(); renderFilters(); renderAdd(); renderTagManagement(); renderTable(); renderMemo(); }
 
-async function initializeApp() {
+if (db.defaultId && db.projects.some(p => p.id === db.defaultId))
 
-    document.body.inert = true;
+    db.current = db.defaultId;
 
-    try {
+db.projects.forEach(pruneLowerPriorityStandard);
 
-        // 保存データの読み込み・自動移行
-        db = await loadDatabase();
+persist();
 
-        // 既存データの形式を整える
-        db.projects.forEach(normalizeProject);
-
-        // デフォルト集計を開く
-        if (
-            db.defaultId &&
-            db.projects.some(p => p.id === db.defaultId)
-        ) {
-            db.current = db.defaultId;
-        }
-
-        // 常用漢字の優先順位整理
-        db.projects.forEach(pruneLowerPriorityStandard);
-
-        // 初回保存
-        await persist();
-
-        // 全画面を表示
-        renderAll();
-
-        document.body.inert = false;
-
-    } catch (e) {
-
-        console.error('初期化エラー:', e);
-
-        alert(
-            'データの読み込みに失敗しました。\n' +
-            '既存の保存データは削除していません。\n\n' +
-            'エラー：' + (e?.message || e)
-        );
-
-    }
-}
-
-initializeApp();
+renderAll();
   </script>
  </body>
 </html>
