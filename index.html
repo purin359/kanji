@@ -1003,6 +1003,28 @@ dialog::backdrop {
 .kanji-detail-back:hover {
     background: #dbe8fc;
 }
+
+/* 上書き詳細リンク */
+.overwrite-link {
+    display: inline;
+    min-height: 0;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.overwrite-link:hover {
+    background: transparent;
+    color: #a00000;
+}
 </style>
  </head>
  <body>
@@ -1366,29 +1388,109 @@ const freshMemo = () => ({
 const freshProject = (name = '集計A') => ({ id: uid(), name, middles: [], majors: [{ id: uid(), name: 'タグ1', color: '#dbeafe' }, { id: uid(), name: 'タグ2', color: '#ffe5c1' }], minors: [], entries: [], memos: [freshMemo()], memoId: null });
 
 let db;
+let storageDB = null;
+let saveQueue = Promise.resolve();
+let saveFailed = false;
+let pendingSaves = 0;
 
-try {
+function openStorageDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('KanjiNoteDB', 1);
 
-    db = JSON.parse(localStorage.getItem('kanjiNoteV1'));
+        request.onupgradeneeded = () => {
+            const database = request.result;
 
+            if (!database.objectStoreNames.contains('storage')) {
+                database.createObjectStore('storage');
+            }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+        request.onblocked = () => reject(
+            new Error('別のタブでデータベースが使用されています')
+        );
+    });
 }
 
-catch { }
+function readStorage() {
+    return new Promise((resolve, reject) => {
+        const transaction = storageDB.transaction('storage', 'readonly');
+        const request = transaction.objectStore('storage').get('main');
 
-if (!db || !Array.isArray(db.projects)) {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+        transaction.onabort = () => reject(transaction.error);
+    });
+}
 
+function writeStorage(data) {
+    return new Promise((resolve, reject) => {
+        const transaction = storageDB.transaction('storage', 'readwrite');
+
+        transaction.objectStore('storage').put(data, 'main');
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
+    });
+}
+
+function validDatabase(data) {
+    return data &&
+        Array.isArray(data.projects) &&
+        data.projects.length > 0;
+}
+
+async function loadDatabase() {
+    storageDB = await openStorageDB();
+
+    const saved = await readStorage();
+
+    // IndexedDBに保存済みの場合
+    if (saved !== undefined) {
+        if (!validDatabase(saved)) {
+            throw new Error('保存データの形式が正しくありません');
+        }
+
+        return saved;
+    }
+
+    // 初回のみlocalStorageから移行
+    const oldData = localStorage.getItem('kanjiNoteV1');
+
+    if (oldData !== null) {
+        const parsed = JSON.parse(oldData);
+
+        if (!validDatabase(parsed)) {
+            throw new Error('旧データの形式が正しくありません');
+        }
+
+        await writeStorage(parsed);
+
+        console.log('IndexedDBへの移行が完了しました');
+
+        return parsed;
+    }
+
+    // 保存データが存在しない場合のみ新規作成
     const p = freshProject();
 
-    db = { projects: [p], current: p.id, defaultId: p.id, sequence: 0 };
-
+    return {
+        projects: [p],
+        current: p.id,
+        defaultId: p.id,
+        sequence: 0
+    };
 }
-
-;
 
 let editId = null, selectedCell = null, tab = 'table', expanded = {};
 
 // 直近の追加・編集を取り消すための履歴
 let lastAddUndo = null;
+
+// 直近の上書き詳細
+let overwriteDetails = new Map();
 
 function normalizeProject(p) {
 
@@ -1413,21 +1515,51 @@ function normalizeProject(p) {
 
 }
 
-db.projects.forEach(normalizeProject);
-
 const project = () => db.projects.find(p => p.id === db.current) || db.projects[0];
 
-const persist = () => { try {
+const persist = () => {
+    if (!storageDB || !db) return Promise.resolve(false);
 
-    localStorage.setItem('kanjiNoteV1', JSON.stringify(db));
+    // 保存時点のデータをコピー
+    const snapshot = JSON.parse(JSON.stringify(db));
 
-}
+    pendingSaves++;
 
-catch (e) {
+    // 保存処理を順番に実行
+    saveQueue = saveQueue
+        .then(() => writeStorage(snapshot))
+        .then(() => {
+            saveFailed = false;
+            return true;
+        })
+        .catch(e => {
+            console.error('IndexedDB保存エラー:', e);
 
-    alert('保存できませんでした。ブラウザの空き容量やプライベートモードを確認し、JSONバックアップを保存してください。');
+            if (!saveFailed) {
+                alert(
+                    '保存できませんでした。\n' +
+                    'JSONバックアップを保存してください。\n\n' +
+                    'エラー：' + (e?.message || e)
+                );
+            }
 
-} };
+            saveFailed = true;
+            return false;
+        })
+        .finally(() => {
+            pendingSaves--;
+        });
+
+    return saveQueue;
+};
+
+// 保存完了前にページを閉じる場合の警告
+window.addEventListener('beforeunload', e => {
+    if (pendingSaves > 0 || saveFailed) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
 
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -2799,11 +2931,10 @@ function saveWords() {
     );
 
     // 保存前に、各漢字をどの登録が代表しているか記録
+    // 常用漢字・非常用漢字の両方を対象とする
     const beforeWinners = new Map();
 
     for (const char of beforeKanji) {
-        if (!standard.has(char)) continue;
-
         const winner = representative(p, char);
 
         if (winner) {
@@ -2876,11 +3007,13 @@ function saveWords() {
         [...afterKanji].filter(char => !beforeKanji.has(char))
     );
 
-    // 優先順位によって既存の常用漢字が上書きされたか判定
+    // 上書き・位置上書きの判定
     const overwrittenKanji = new Set();
+    const positionOverwrittenKanji = new Set();
+
+    overwriteDetails.clear();
 
     for (const char of afterKanji) {
-        if (!standard.has(char)) continue;
 
         const beforeId = beforeWinners.get(char);
         const afterEntry = representative(p, char);
@@ -2891,7 +3024,30 @@ function saveWords() {
             beforeId !== afterEntry.id &&
             savedEntryIds.has(afterEntry.id)
         ) {
-            overwrittenKanji.add(char);
+
+            const isStandard = standard.has(char);
+
+            if (isStandard) {
+                // 常用漢字の上書き
+                overwrittenKanji.add(char);
+            } else {
+                // 非常用漢字の位置上書き
+                positionOverwrittenKanji.add(char);
+            }
+
+            // 上書き前の登録情報を取得
+            const beforeEntry = lastAddUndo.entries.find(
+                entry => entry.id === beforeId
+            );
+
+            // 上書き前後の情報を保存
+            if (beforeEntry) {
+                overwriteDetails.set(char, {
+                    type: isStandard ? 'overwrite' : 'position',
+                    before: getOverwriteInfo(p, beforeEntry),
+                    after: getOverwriteInfo(p, afterEntry)
+                });
+            }
         }
     }
 
@@ -2900,10 +3056,12 @@ function saveWords() {
         entry => !beforeEntryIds.has(entry.id)
     );
 
-    // すでに存在していた常用漢字外を今回追加したもの
+    // 所属先が変わらず、用法だけ追加された非常用漢字
     const extraKanji = new Set(
         newEntries.flatMap(entry => entry.kanji).filter(char =>
-            !standard.has(char) && beforeKanji.has(char)
+            !standard.has(char) &&
+            beforeKanji.has(char) &&
+            !positionOverwrittenKanji.has(char)
         )
     );
 
@@ -2950,19 +3108,41 @@ function saveWords() {
         const charsHtml = kanji.map(char => {
             const safe = esc(char);
 
+            // 常用漢字・非常用漢字共通の新規登録
             if (addedKanji.has(char)) {
                 return `<span class="new-kanji">${safe}</span>`;
             }
 
+            // 常用漢字の上書き
             if (overwrittenKanji.has(char)) {
-                return `<span class="new-kanji">${safe}（上書き）</span>`;
+                return `
+                    <span class="new-kanji">${safe}<button
+                        type="button"
+                        class="overwrite-link"
+                        onclick="showOverwriteDetail('${safe}')"
+                    >（上書き）</button></span>
+                `;
             }
 
+            // 非常用漢字の位置上書き
+            if (positionOverwrittenKanji.has(char)) {
+                return `
+                    <span class="new-kanji">${safe}<button
+                        type="button"
+                        class="overwrite-link"
+                        onclick="showOverwriteDetail('${safe}')"
+                    >（位置上書き）</button></span>
+                `;
+            }
+
+            // 非常用漢字の用法追加
             if (extraKanji.has(char)) {
                 return `${safe}<span class="extra-kanji-label">（常用外追加）</span>`;
             }
 
+            // 変更なし
             return safe;
+
         }).join('、');
 
         return `<div>${esc(word)}：${charsHtml}</div>`;
@@ -2997,6 +3177,9 @@ function saveWords() {
                 ${overwrittenKanji.size
                     ? ` / 上書き：${overwrittenKanji.size}文字`
                     : ''}
+                ${positionOverwrittenKanji.size
+                    ? ` / 位置上書き：${positionOverwrittenKanji.size}文字`
+                    : ''}
                 ${extraKanji.size
                     ? ` / 常用外追加：${extraKanji.size}文字`
                     : ''}
@@ -3015,6 +3198,146 @@ function saveWords() {
             block: 'center'
         });
     }
+}
+
+// 上書き詳細用の登録情報を取得
+function getOverwriteInfo(p, entry) {
+
+    const major = p.majors.find(
+        tag => tag.id === entry.majorId
+    )?.name || 'なし';
+
+    const middle = (entry.middleIds || [])
+        .map(id => p.middles.find(
+            tag => tag.id === id
+        )?.name)
+        .filter(Boolean)
+        .join('・') || 'なし';
+
+    const minor = (entry.minorIds || [])
+        .map(id => p.minors.find(
+            tag => tag.id === id
+        )?.name)
+        .filter(Boolean)
+        .join('・') || 'なし';
+
+    const free = (entry.freeTags || [])
+        .filter(Boolean)
+        .join('・') || 'なし';
+
+    return {
+        word: entry.word,
+        major,
+        middle,
+        minor,
+        free,
+        verified: entry.verified
+    };
+}
+
+
+// 上書き詳細画面を表示
+function showOverwriteDetail(char) {
+
+    const detail = overwriteDetails.get(char);
+
+    if (!detail) {
+        alert('上書き詳細が見つかりません');
+        return;
+    }
+
+    const renderInfo = (info, title, color) => `
+        <div style="
+            border:1px solid ${color};
+            border-radius:10px;
+            padding:12px;
+            margin:8px 0;
+            overflow-wrap:anywhere;
+        ">
+
+            <div style="
+                color:${color};
+                font-weight:700;
+                font-size:14px;
+            ">
+                ${title}
+            </div>
+
+            <div style="
+                font-size:21px;
+                font-weight:700;
+                margin:6px 0;
+            ">
+                ${esc(info.word)}
+            </div>
+
+            <hr style="
+                border:0;
+                border-top:1px solid #dce3ed;
+            ">
+
+            <div>大タグ：${esc(info.major)}</div>
+            <div>中タグ：${esc(info.middle)}</div>
+            <div>小タグ：${esc(info.minor)}</div>
+            <div>自由タグ：${esc(info.free)}</div>
+
+            <div class="muted" style="margin-top:5px">
+                実機確認：${info.verified ? '確認済み' : '未確認'}
+            </div>
+
+        </div>
+    `;
+
+    dialog(`
+
+        <div class="kanji-detail-header">
+
+            <div>
+                <h2>${esc(char)}</h2>
+                <strong>${detail.type === 'position'
+                    ? '位置上書き詳細'
+                    : '上書き詳細'}</strong>
+            </div>
+
+            <button
+                type="button"
+                class="kanji-detail-back"
+                onclick="$('dialog').close()"
+            >
+                ← 戻る
+            </button>
+
+        </div>
+
+        ${renderInfo(
+            detail.before,
+            '上書き前',
+            '#b45353'
+        )}
+
+        <div style="
+            text-align:center;
+            font-size:26px;
+            font-weight:700;
+            color:#65758a;
+        ">
+            ↓
+        </div>
+
+        ${renderInfo(
+            detail.after,
+            '上書き後',
+            '#245db4'
+        )}
+
+        ${detail.type === 'position' ? `
+            <div class="notice">
+                表示上の所属先が変更されました。
+                以前の用法も引き続き保存されています。
+            </div>
+        ` : ''}
+
+    `);
 }
 
 function undoLastAdd() {
@@ -4941,15 +5264,51 @@ function executeImport() {
 
 function renderAll() { renderProjects(); renderFilters(); renderAdd(); renderTagManagement(); renderTable(); renderMemo(); }
 
-if (db.defaultId && db.projects.some(p => p.id === db.defaultId))
+async function initializeApp() {
 
-    db.current = db.defaultId;
+    document.body.inert = true;
 
-db.projects.forEach(pruneLowerPriorityStandard);
+    try {
 
-persist();
+        // 保存データの読み込み・自動移行
+        db = await loadDatabase();
 
-renderAll();
+        // 既存データの形式を整える
+        db.projects.forEach(normalizeProject);
+
+        // デフォルト集計を開く
+        if (
+            db.defaultId &&
+            db.projects.some(p => p.id === db.defaultId)
+        ) {
+            db.current = db.defaultId;
+        }
+
+        // 常用漢字の優先順位整理
+        db.projects.forEach(pruneLowerPriorityStandard);
+
+        // 初回保存
+        await persist();
+
+        // 全画面を表示
+        renderAll();
+
+        document.body.inert = false;
+
+    } catch (e) {
+
+        console.error('初期化エラー:', e);
+
+        alert(
+            'データの読み込みに失敗しました。\n' +
+            '既存の保存データは削除していません。\n\n' +
+            'エラー：' + (e?.message || e)
+        );
+
+    }
+}
+
+initializeApp();
   </script>
  </body>
 </html>
