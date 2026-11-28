@@ -1133,7 +1133,7 @@ dialog::backdrop {
       単語から漢字を追加
      </h2>
      <div class="muted">
-      改行・半角/全角カンマ・読点(、)で単語を区切ります。各単語に含まれるすべての漢字を登録します。
+      改行・半角/全角カンマ・読点(、)・中点(・)で単語を区切ります。[]で囲んだ部分は区切らず、1つの単語として登録します。
      </div>
      <textarea id="words" placeholder="単語を入力してください。"></textarea>
      <div class="flex" style="margin-top:12px">
@@ -2632,7 +2632,9 @@ function renderAdd() {
 
         if (entry) {
 
-            $('words').value = entry.word;
+            $('words').value = /[\n\r,，、・]/.test(entry.word)
+                ? `[${entry.word}]`
+                : entry.word;
             $('major').value = entry.majorId;
             $('verified').checked = entry.verified;
 
@@ -2870,12 +2872,61 @@ function editEntry(id) {
     switchTab('add');
 }
 
+function splitWords(text) {
+    const words = [];
+    let buffer = '';
+    let bracket = null;
+
+    for (const char of text) {
+
+        // [] または ［］ の開始
+        if (bracket === null && (char === '[' || char === '［')) {
+            bracket = char === '[' ? ']' : '］';
+            continue;
+        }
+
+        // [] または ［］ の終了
+        if (bracket !== null && char === bracket) {
+            bracket = null;
+            continue;
+        }
+
+        // 括弧の外側だけ区切る
+        if (bracket === null && /[\n\r,，、・]/.test(char)) {
+            if (buffer.trim()) {
+                words.push(buffer.trim());
+            }
+
+            buffer = '';
+            continue;
+        }
+
+        buffer += char;
+    }
+
+    // 閉じ括弧がない場合
+    if (bracket !== null) {
+        throw new Error('閉じ括弧が入力されていません');
+    }
+
+    if (buffer.trim()) {
+        words.push(buffer.trim());
+    }
+
+    return words;
+}
+
 function saveWords() {
     const p = project();
-    const words = $('words').value
-        .split(/[\n\r,，、]+/)
-        .map(word => word.trim())
-        .filter(Boolean);
+
+    let words;
+
+    try {
+        words = splitWords($('words').value);
+    } catch (e) {
+        alert(e.message);
+        return;
+    }
 
     const majorId = $('major').value;
     const middleIds = [...document.querySelectorAll('.middleChoice:checked')]
