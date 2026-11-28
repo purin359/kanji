@@ -1,0 +1,5314 @@
+<!DOCTYPE html>
+<html lang="ja">
+ <head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <title>
+   汎用漢字集計
+  </title>
+  <style>
+:root {
+    font-family: system-ui,sans-serif;
+    color: #263448;
+    background: #f4f6fa;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+header {
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 20;
+    border-bottom: 1px solid #dce2eb;
+    padding: 9px 12px;
+    box-shadow: 0 2px 8px #0001;
+}
+
+.top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.top strong {
+    margin-right: auto;
+}
+
+.tabs {
+    display: flex;
+    gap: 6px;
+    margin-top: 9px;
+}
+
+.tabs button {
+    flex: 1;
+}
+
+.tabs .active {
+    background: #275fbc;
+    color: #fff;
+}
+
+main {
+    max-width: 1200px;
+    margin: auto;
+    padding: 12px;
+}
+
+section {
+    display: none;
+}
+
+section.active {
+    display: block;
+}
+
+.panel {
+    background: #fff;
+    border: 1px solid #dce2eb;
+    border-radius: 10px;
+    padding: 13px;
+    margin-bottom: 12px;
+}
+
+.flex {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.grow {
+    flex: 1;
+    min-width: 150px;
+}
+
+button,select,input,textarea {
+    font: inherit;
+}
+
+button,select,input {
+    padding: 8px;
+    border: 1px solid #c6cfdd;
+    border-radius: 7px;
+    background: #fff;
+}
+
+button {
+    cursor: pointer;
+}
+
+button.primary {
+    background: #275fbc;
+    color: #fff;
+    border-color: #275fbc;
+}
+
+button.danger {
+    color: #b11b2b;
+}
+
+input[type=checkbox] {
+    width: 17px;
+    height: 17px;
+    vertical-align: middle;
+}
+
+textarea {
+    width: 100%;
+    min-height: 120px;
+    padding: 10px;
+    border: 1px solid #c6cfdd;
+    border-radius: 7px;
+}
+
+label {
+    display: inline-flex;
+    gap: 5px;
+    align-items: center;
+}
+
+h2 {
+    font-size: 19px;
+    margin: 8px 0 13px;
+}
+
+h3 {
+    font-size: 16px;
+    margin: 10px 0;
+}
+
+.grade {
+    background: #e9edf4;
+    border-radius: 6px;
+    padding: 9px;
+    margin: 10px 0 6px;
+    cursor: pointer;
+    font-weight: 650;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(20,minmax(0,1fr));
+    gap: 3px;
+}
+
+.char {
+    border: 1px solid #cdd3dc;
+    background: #fff;
+    min-width: 0;
+    padding: 8px 0;
+    text-align: center;
+    border-radius: 4px;
+    font-size: 17px;
+    cursor: pointer;
+}
+
+.char.used {
+    font-weight: 700;
+}
+
+.char.hidden {
+    opacity: .18;
+}
+
+.muted {
+    color: #66758b;
+    font-size: 13px;
+}
+
+.tag {
+    display: inline-block;
+    background: #e8eefb;
+    padding: 3px 7px;
+    border-radius: 6px;
+    margin: 3px;
+}
+
+.item {
+    border-bottom: 1px solid #e1e6ee;
+    padding: 8px 0;
+}
+
+.notice {
+    padding: 8px 10px;
+    border-radius: 6px;
+    background: #e9f4ec;
+    margin: 9px 0;
+    white-space: pre-wrap;
+}
+
+.notice:empty {
+    display: none;
+}
+
+.tablewrap {
+    overflow: auto;
+    max-height: 65vh;
+}
+
+table {
+    border-collapse: collapse;
+    background: #fff;
+    min-width: 100%;
+}
+
+th,td {
+    border: 1px solid #cdd5df;
+    padding: 5px;
+    min-width: 100px;
+}
+
+th {
+    background: #edf1f7;
+    position: sticky;
+    top: 0;
+}
+
+td select,td input {
+    width: 100%;
+    min-width: 90px;
+}
+
+.small {
+    font-size: 12px;
+}
+
+.subrow {
+    padding: 7px;
+    background: #f7f9fc;
+    border-radius: 6px;
+    margin: 5px 0;
+}
+
+.pill {
+    border-radius: 99px;
+}
+
+.hiddenUI {
+    display: none !important;
+}
+
+@media (max-width:750px) {
+    .grid {
+        grid-template-columns: repeat(20,minmax(0,1fr));
+    }
+
+    .char {
+        font-size: 15px;
+        padding: 8px 0;
+    }
+
+    main {
+        padding: 8px;
+    }
+
+    .top strong {
+        width: 100%;
+    }
+
+}
+
+@media (max-width:650px) {
+    .grid {
+        grid-template-columns: repeat(20,minmax(0,1fr));
+    }
+
+    .char {
+        font-size: 15px;
+        padding: 7px 0;
+    }
+
+    .top strong {
+        width: 100%;
+    }
+
+    header {
+        padding: 7px;
+    }
+
+    main {
+        padding: 8px;
+    }
+
+}
+
+/* 視認性改善・スマホ最適化 */
+:root {
+    font-family: "Noto Sans JP","Hiragino Kaku Gothic ProN",system-ui,sans-serif;
+    color: #202d40;
+    background: #f3f6fb;
+    font-size: 15px;
+}
+
+body {
+    line-height: 1.6;
+}
+
+header {
+    background: #ffffffed;
+    backdrop-filter: blur(12px);
+    padding: 12px max(12px,calc((100vw - 1200px)/2));
+    box-shadow: 0 3px 16px #172d4914;
+}
+
+.top {
+    gap: 9px;
+}
+
+.top strong {
+    font-size: 20px;
+    letter-spacing: .03em;
+    color: #183c74;
+}
+
+.tabs {
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tabs button {
+    border: 0;
+    background: #edf2fa;
+    border-radius: 10px;
+    padding: 11px 8px;
+    font-weight: 700;
+    color: #435674;
+}
+
+.tabs button.active {
+    background: #245db4;
+    color: white;
+    box-shadow: 0 3px 10px #245db433;
+}
+
+main {
+    max-width: 1200px;
+    padding: 18px 14px;
+}
+
+.panel {
+    border: 1px solid #e1e7f0;
+    border-radius: 15px;
+    padding: 18px;
+    margin-bottom: 16px;
+    box-shadow: 0 3px 15px #1b35500a;
+}
+
+.panel>.flex {
+    margin-bottom: 8px;
+}
+
+button,select,input,textarea {
+    font-size: 15px;
+}
+
+button,select,input {
+    min-height: 40px;
+    padding: 8px 11px;
+    border-radius: 9px;
+    border-color: #cbd5e3;
+}
+
+button {
+    transition:
+        background 0.15s,
+        transform 0.15s;
+}
+
+button:hover {
+    background: #e9f0fb;
+}
+
+button:active {
+    transform: scale(.98);
+}
+
+button.primary {
+    background: #245db4;
+    border-color: #245db4;
+}
+
+button.primary:hover {
+    background: #184d9c;
+}
+
+input:focus,select:focus,textarea:focus {
+    outline: 2px solid #80aaf0;
+    outline-offset: 1px;
+}
+
+textarea {
+    min-height: 145px;
+    border-radius: 11px;
+    line-height: 1.7;
+}
+
+h2 {
+    font-size: 20px;
+    color: #1c3e70;
+    margin: 3px 0 14px;
+}
+
+h3 {
+    font-size: 17px;
+    color: #2b456a;
+    margin: 16px 0 10px;
+}
+
+.grade {
+    background: #eaf0fa;
+    border: 1px solid #dbe5f4;
+    border-radius: 10px;
+    padding: 11px 13px;
+    margin: 13px 0 8px;
+    color: #263f63;
+}
+
+.grade:hover {
+    background: #e1ebf9;
+}
+
+.grid {
+    gap: 5px;
+}
+
+.char {
+    min-height: 40px;
+    border-radius: 7px;
+    border-color: #d5dce7;
+    font-size: 17px;
+    line-height: 1.2;
+    padding: 8px 0;
+    box-shadow: 0 1px 2px #00000008;
+}
+
+.char:hover {
+    outline: 2px solid #8aaee9;
+    outline-offset: 0;
+}
+
+.char.hidden {
+    opacity: .22;
+}
+
+.muted {
+    color: #65758a;
+    font-size: 13px;
+}
+
+.tag {
+    border-radius: 8px;
+    padding: 4px 9px;
+}
+
+.item {
+    padding: 11px 0;
+}
+
+.notice {
+    border-radius: 10px;
+    padding: 12px 14px;
+}
+
+.subrow {
+    padding: 10px;
+    border: 1px solid #e7edf5;
+    border-radius: 9px;
+    margin: 7px 0;
+}
+
+.tablewrap {
+    border: 1px solid #d9e2ef;
+    border-radius: 10px;
+}
+
+th,td {
+    padding: 9px;
+    border-color: #dce3ed;
+}
+
+th {
+    background: #eaf0fa;
+}
+
+dialog {
+    box-shadow: 0 15px 60px #10274444;
+    padding: 20px;
+}
+
+dialog::backdrop {
+    background: #12223d77;
+}
+
+@media (max-width:750px) {
+    header {
+        padding: 9px 10px;
+    }
+
+    .top strong {
+        width: 100%;
+        font-size: 18px;
+    }
+
+    .top {
+        gap: 6px;
+    }
+
+    .top select {
+        max-width: 48vw;
+    }
+
+    .top button {
+        font-size: 12px;
+        min-height: 36px;
+        padding: 6px 9px;
+    }
+
+    .top label {
+        font-size: 12px;
+    }
+
+    .tabs {
+        margin-top: 9px;
+        gap: 5px;
+    }
+
+    .tabs button {
+        font-size: 14px;
+        min-height: 43px;
+        padding: 8px 3px;
+    }
+
+    main {
+        padding: 10px;
+    }
+
+    .panel {
+        padding: 12px;
+        border-radius: 12px;
+        margin-bottom: 11px;
+    }
+
+    .flex {
+        gap: 7px;
+    }
+
+    .grow {
+        min-width: 0;
+        flex: 1 1 160px;
+    }
+
+    .grid {
+        grid-template-columns: repeat(20,minmax(0,1fr));
+        gap: 3px;
+    }
+
+    .char {
+        min-height: 37px;
+        font-size: 16px;
+        padding: 7px 0;
+        border-radius: 5px;
+    }
+
+    .grid {
+        gap: 1px;
+    }
+
+    .char {
+        min-height: 24px;
+        padding: 4px 0;
+        font-size: clamp(9px, 2.6vw, 13px);
+        border-radius: 2px;
+    }
+
+    .grade {
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    h3 {
+        font-size: 16px;
+    }
+
+    #filterMajor,#filterMinor {
+        max-width: 40vw;
+    }
+
+    #table .panel .flex:first-child {
+        flex-wrap: nowrap;
+    }
+
+    #table .panel .flex:first-child button {
+        padding: 8px 7px;
+        font-size: 13px;
+    }
+
+    dialog {
+        width: calc(100% - 20px);
+        padding: 14px;
+    }
+
+}
+
+@media (max-width:370px) {
+    .char {
+        font-size: 14px;
+        min-height: 33px;
+    }
+
+    .top button {
+        font-size: 11px;
+        padding: 6px;
+    }
+
+    .tabs button {
+        font-size: 13px;
+    }
+
+}
+
+/* 4タブをスマートフォンでも1行に表示 */
+.tabs {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+}
+
+.tabs button {
+    min-width: 0;
+    padding: 10px 3px;
+    font-size: clamp(10px, 2.5vw, 14px);
+    white-space: nowrap;
+}
+
+/* ========================================
+   タグ順番指定：コンパクト表示
+======================================== */
+
+.tag-order-list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px;
+    margin: 12px 0 18px;
+}
+
+/* タグ名ボタン */
+.tag-order-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: auto;
+    min-height: 36px;
+    padding: 7px 12px;
+
+    border: 1px solid #cbd5e3;
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+    color: #263448;
+
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* タグに触れたとき */
+.tag-order-button:hover {
+    filter: brightness(0.96);
+}
+
+/* 中タグ・小タグ */
+.tag-order-button.sub-tag {
+    background: #edf2fa;
+}
+
+/* 編集画面 */
+.tag-edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 14px 0;
+}
+
+.tag-edit-field > label {
+    font-weight: 600;
+}
+
+.tag-edit-field input,
+.tag-edit-field select {
+    width: 100%;
+}
+
+.tag-edit-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.tag-edit-actions button {
+    flex: 1;
+}
+
+/* スマホ */
+@media (max-width: 650px) {
+
+    .tag-order-list {
+        gap: 5px;
+    }
+
+    .tag-order-button {
+        min-height: 32px;
+        padding: 5px 9px;
+        font-size: 12px;
+    }
+
+}
+
+/* 統合タグ検索と候補表示 */
+.tag-search-wrap { position:relative; display:flex; flex:1 1 260px; max-width:500px; gap:5px; }
+.tag-search-wrap input { flex:1; min-width:0; }
+.tag-suggestions { position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:40; max-height:290px; overflow-y:auto; background:#fff; border:1px solid #cbd5e3; border-radius:9px; box-shadow:0 9px 25px #172d4928; padding:5px; }
+.tag-suggestion { display:flex; align-items:center; gap:8px; width:100%; text-align:left; border:0; background:#fff; padding:8px 9px; min-height:35px; }
+.tag-suggestion:hover,.tag-suggestion.active { background:#eaf0fa; }
+.tag-suggestion small { color:#64748b; margin-left:auto; }
+.selected-tag-filters { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+.selected-tag-filters button { min-height:30px; padding:4px 9px; background:#e7effc; font-size:13px; }
+.tag-filter-selects label { display:flex; flex-direction:column; align-items:flex-start; }
+.tag-filter-selects select { max-width:240px; }
+/* タグ選択プルダウンのはみ出し防止 */
+#memoTagType,
+#memoTagParent {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 親要素も画面幅を超えないようにする */
+.tag-edit-field {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* タグ順番指定：プルダウンのはみ出し防止 */
+#middleDisplayFilter,
+#minorDisplayFilter,
+#newMiddleParent,
+#newMinorParent {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+/* 表示するタグのラベル */
+#priority .flex > label {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* ラベル内のプルダウン */
+#priority .flex > label > select {
+    flex: 1;
+    min-width: 0;
+}
+
+/* タグ追加欄も画面内に収める */
+#priority .flex > select {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* 集計メモ：表を横スクロール可能にする */
+#memoTable {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x pan-y;
+}
+
+/* 列数が増えても表を無理に縮めない */
+#memoTable table {
+    width: max-content;
+    min-width: 100%;
+    table-layout: auto;
+}
+
+/* 各セルの幅を維持 */
+#memoTable th,
+#memoTable td {
+    min-width: 130px;
+    width: auto;
+    white-space: nowrap;
+    word-break: keep-all;
+}
+
+/* プルダウンや入力欄の幅を維持 */
+#memoTable td select,
+#memoTable td input {
+    min-width: 100px;
+    max-width: none;
+}
+
+/* スクロールバー */
+#memoTable::-webkit-scrollbar {
+    height: 9px;
+}
+
+#memoTable::-webkit-scrollbar-thumb {
+    background: #aab8cc;
+    border-radius: 10px;
+}
+
+/* 今回新しく登録された漢字 */
+.new-kanji {
+    color: #e00000;
+    font-weight: 700;
+    font-size: 1.15em;
+}
+
+/* 追加リザルトをコンパクトに */
+#addMessage {
+    scroll-margin-top: 80px;
+    line-height: 1.45;
+    padding: 8px 10px;
+    margin: 6px 0;
+    white-space: normal;
+}
+
+#addMessage > div {
+    margin-top: 3px !important;
+    margin-bottom: 0 !important;
+}
+
+#addMessage .undo-button {
+    min-height: 28px;
+    padding: 4px 9px;
+    font-size: 12px;
+}
+
+/* 既存の常用漢字外を追加したときの表示 */
+.extra-kanji-label {
+    color: #d97706;
+    font-size: 0.85em;
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+/* リザルト取り消しボタン */
+.undo-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    width: auto;
+    min-width: 0;
+    min-height: 34px;
+    padding: 6px 13px;
+
+    background: #dc3545;
+    color: #fff;
+    border: 1px solid #dc3545;
+    border-radius: 8px;
+
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.3;
+    white-space: nowrap;
+
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.undo-button:hover {
+    background: #b91c2c;
+    border-color: #b91c2c;
+}
+
+.undo-button:active {
+    transform: scale(0.96);
+}
+
+/* 詳細画面の上部固定バー */
+.dialog-topbar {
+    position: sticky;
+    top: -20px;
+    z-index: 100;
+
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    padding: 10px 0;
+    margin-bottom: 12px;
+
+    background: #fff;
+    border-bottom: 1px solid #e1e6ee;
+}
+
+/* 戻るボタン */
+.dialog-back-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: auto;
+    min-height: 36px;
+    padding: 7px 14px;
+
+    background: #edf2fa;
+    color: #245db4;
+    border: 1px solid #cbd5e3;
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.dialog-back-button:hover {
+    background: #dbe8fc;
+}
+
+/* 漢字詳細：漢字と戻るボタンを固定 */
+.kanji-detail-header {
+    position: sticky;
+    top: -20px;
+    z-index: 100;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    padding: 12px 0;
+    margin-bottom: 12px;
+
+    background: #fff;
+    border-bottom: 1px solid #e1e6ee;
+}
+
+/* 漢字 */
+.kanji-detail-header h2 {
+    margin: 0;
+    font-size: 38px;
+    color: #183c74;
+}
+
+/* 戻るボタン */
+.kanji-detail-back {
+    flex-shrink: 0;
+    min-height: 36px;
+    padding: 7px 14px;
+
+    background: #edf2fa;
+    color: #245db4;
+    border: 1px solid #cbd5e3;
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.kanji-detail-back:hover {
+    background: #dbe8fc;
+}
+
+/* 上書き詳細リンク */
+.overwrite-link {
+    display: inline;
+    min-height: 0;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.overwrite-link:hover {
+    background: transparent;
+    color: #a00000;
+}
+</style>
+ </head>
+ <body>
+  <header>
+   <div class="top">
+    <strong>
+     汎用漢字集計
+    </strong>
+    <select id="project">
+    </select>
+    <label title="起動時に開く集計">
+     <input id="defaultProject" type="checkbox"/>
+     初期表示
+    </label>
+    <button onclick="manageProjects()">
+     集計管理
+    </button>
+    <button onclick="exportData()">
+     書き出し
+    </button>
+    <button onclick="document.getElementById('importFile').click()">
+     読み込み
+    </button>
+    <input accept=".json" hidden="" id="importFile" type="file"/>
+   </div>
+   <div class="tabs">
+    <button class="active" data-tab="table">
+     漢字表
+    </button>
+    <button data-tab="add">
+     漢字追加
+    </button>
+    <button data-tab="priority">
+     タグ順番指定
+    </button>
+    <button data-tab="memo">
+     集計メモ
+    </button>
+   </div>
+  </header>
+  <main>
+   <section class="active" id="table">
+    <div class="panel">
+     <div class="flex">
+      <input class="grow" id="search" placeholder="漢字・単語検索（Enter）"/>
+      <button onclick="searchKanji()">
+       検索
+      </button>
+      <button onclick="document.getElementById('search').value='';renderTable()">
+       解除
+      </button>
+     </div>
+     <div class="tag-filter-panel" style="margin-top:9px">
+      <div class="flex">
+       <div class="tag-search-wrap">
+        <input id="tagSearchInput" type="search" placeholder="タグ名を入力（先頭一致）" autocomplete="off" oninput="updateTagSuggestions()" onfocus="updateTagSuggestions(true)" onkeydown="tagSearchKeydown(event)"/>
+        <button type="button" onclick="toggleTagSuggestions()" title="タグ候補を開く">▼</button>
+        <div id="tagSuggestions" class="tag-suggestions hiddenUI"></div>
+       </div>
+       <button onclick="clearTagFilters()">タグ絞り込み解除</button>
+      </div>
+      <div id="selectedTagFilters" class="selected-tag-filters"></div>
+      <div class="flex" style="margin-top:8px">
+
+        <label>
+            表示対象
+            <select id="tagDisplayMode" onchange="renderTable()">
+                <option value="appeared">登場</option>
+                <option value="missing">未登場</option>
+            </select>
+        </label>
+
+        <label id="includeHigherMajorsLabel">
+            <input
+                type="checkbox"
+                id="includeHigherMajors"
+                onchange="renderTable()"
+            >
+            上位の大タグを含める
+        </label>
+
+    </div>
+      <div class="flex tag-filter-selects">
+       <label>大タグ <select id="filterMajor" multiple size="3" style="min-width:130px"></select></label>
+       <label>中タグ <select id="filterMiddle" multiple size="3" style="min-width:130px"></select></label>
+       <label>小タグ <select id="filterMinor" multiple size="3" style="min-width:130px"></select></label>
+       <label id="freeTagFilterWrap" style="display:none">
+            自由タグ
+            <select
+                id="filterFreeTag"
+                multiple
+                size="3"
+                style="min-width:130px"
+            ></select>
+        </label>
+      </div>
+      <div class="muted">上位タグを選ぶと下位の候補を限定します。候補をクリックすると選択・解除できます。</div>
+     </div>
+    </div>
+    <div id="kanjiGrids">
+    </div>
+   </section>
+   <section id="add">
+    <div class="panel">
+     <h2 id="addTitle">
+      単語から漢字を追加
+     </h2>
+     <div class="muted">
+      改行・半角/全角カンマ・読点(、)で単語を区切ります。各単語に含まれるすべての漢字を登録します。
+     </div>
+     <textarea id="words" placeholder="単語を入力してください。"></textarea>
+     <div class="flex" style="margin-top:12px">
+        <button class="primary" id="saveButton" onclick="saveWords()">
+            追加する
+        </button>
+
+        <label>
+            <input type="checkbox" id="scrollToResult" checked>
+            追加後にリザルトへ移動
+        </label>
+
+        <button onclick="resetEditor()">
+            入力をクリア
+        </button>
+
+        <button class="danger hiddenUI" id="deleteButton" onclick="deleteEdit()">
+            この登録を削除
+        </button>
+    </div>
+     <div class="flex">
+      <label>
+       大タグ
+       <select id="major">
+       </select>
+      </label>
+      <label>
+       <input id="verified" type="checkbox" checked/>
+       実機確認済み
+      </label>
+     </div>
+     <h3>
+      中タグ
+     </h3>
+     <div class="flex" id="middleChecks">
+     </div>
+     <h3>
+      小タグ（最大5つ）
+     </h3>
+     <div class="flex" style="margin-top:10px">
+        <label>自由タグ1
+            <input id="freeTag1" type="text" placeholder="自由に入力" oninput="updateFreeTagLimits()">
+        </label>
+
+        <label>自由タグ2
+            <input id="freeTag2" type="text" placeholder="自由に入力" oninput="updateFreeTagLimits()">
+        </label>
+
+        <label>自由タグ3
+            <input id="freeTag3" type="text" placeholder="自由に入力" oninput="updateFreeTagLimits()">
+        </label>
+    </div>
+     <div class="flex" id="minorChecks">
+     </div>
+     <div class="notice" id="addMessage">
+     </div>
+    </div>
+   </section>
+   <section id="priority">
+    <div class="panel">
+     <h2>
+      タグ順番指定
+     </h2>
+     <p class="muted">
+      優先順位は「大タグ → 中タグ → 小タグ → 登録順」です。各一覧の上にあるタグほど優先されます。変更は自動保存されます。
+     </p>
+     <h3>
+      大タグ（優先順位・色）
+     </h3>
+     <div id="majorList">
+     </div>
+     <div class="flex">
+      <input id="newMajor" placeholder="大タグ名"/>
+      <input id="newColor" type="color" value="#dbeafe"/>
+      <button onclick="addMajor()">
+       大タグ追加
+      </button>
+     </div>
+     <div class="flex">
+        <h3>中タグ（優先順位）</h3>
+
+        <label>
+            表示するタグ
+            <select id="middleDisplayFilter"
+                    onchange="renderTagManagement()">
+                <option value="all">すべて</option>
+            </select>
+        </label>
+    </div>
+     <div id="middleList">
+     </div>
+     <div class="flex">
+
+        <select id="newMiddleParent">
+            <option value="none">専属なし（共通）</option>
+        </select>
+
+        <input
+            id="newMiddle"
+            placeholder="中タグ名"
+        >
+
+        <button onclick="addMiddle()">
+            中タグ追加
+        </button>
+
+    </div>
+     <div class="flex">
+        <h3>小タグ（優先順位）</h3>
+
+        <label>
+            表示するタグ
+            <select id="minorDisplayFilter"
+                    onchange="renderTagManagement()">
+                <option value="all">すべて</option>
+            </select>
+        </label>
+    </div>
+     <div id="minorList">
+     </div>
+     <div class="flex">
+
+        <select id="newMinorParent">
+            <option value="none">専属なし（共通）</option>
+        </select>
+
+        <input
+            id="newMinor"
+            placeholder="小タグ名"
+        >
+
+        <button onclick="addMinor()">
+            小タグ追加
+        </button>
+
+    </div>
+    </div>
+   </section>
+   <section id="memo">
+    <div class="panel">
+     <div class="flex">
+      <label>
+       表
+       <select id="memoSelect">
+       </select>
+      </label>
+      <button onclick="newMemo()">
+       新しい表
+      </button>
+      <button onclick="renameMemo()">
+       名前変更
+      </button>
+      <button class="danger" onclick="deleteMemo()">
+       表を削除
+      </button>
+     </div>
+     <div class="flex" style="margin-top:10px">
+      <label>
+       マス形式
+       <select id="cellMode">
+            <option value="check">チェックボックス</option>
+            <option value="select">プルダウン</option>
+            <option value="text">自由入力</option>
+        </select>
+      </label>
+      <label>
+       状態で絞り込み
+       <select id="stateFilter">
+        <option value="all">
+         すべて
+        </option>
+       </select>
+      </label>
+      <button onclick="editStates()">
+       状態・色の設定
+      </button>
+     </div>
+     <div class="flex" style="margin-top:10px">
+      <button onclick="insertAxis('row')">
+       行を追加
+      </button>
+      <button onclick="openMemoTagRows()">
+        タグから縦軸を作成
+    </button>
+      <button onclick="insertAxis('col')">
+       列を追加
+      </button>
+     </div>
+     <p class="muted">
+        行・列の名前をクリックすると、名前変更・挿入・削除・移動ができます。
+        列では表示形式やプルダウンの選択肢も設定できます。
+    </p>
+     <div class="flex" style="margin:10px 0; gap:8px">
+        <input
+            id="memoRowSearch"
+            type="search"
+            class="grow"
+            placeholder="縦軸の名前を検索"
+            oninput="searchMemoRow(false)"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();searchMemoRow(true)}"
+        >
+
+        <button type="button" onclick="searchMemoRow(true)">
+            決定
+        </button>
+
+        <span id="memoRowSearchResult" class="muted"></span>
+    </div>
+
+    <div class="tablewrap" id="memoTable"></div>
+
+    </div>
+   </section>
+  </main>
+  <dialog id="dialog"
+        style="border:1px solid #ccd4df;
+            border-radius:12px;
+            max-width:min(95vw,620px);
+            width:100%;
+            max-height:85vh;
+            overflow:auto;">
+
+        <div id="dialogContent"></div>
+
+    </dialog>
+  <script>
+   const GRADES = ["一二三四五六七八九十百千日月火水木金土田山川林森石天気空雨夕草花竹文字本円玉年音学校先生赤白青人男女子目耳口手足犬貝虫王力町村車大中小上下左右正出入立見休早名糸", "引羽雲園遠何科夏家歌画回会海絵外角楽活間丸岩顔汽記帰弓牛魚京強教近兄形計元言原戸古午後語工公広交光考行高黄合谷国黒今才細作算止市矢姉思紙寺自時室社弱首秋週春書少場色食心新親図数西声星晴切雪船線前組走多太体台地池知茶昼長鳥朝直通弟店点電刀冬当東答頭同道読内南肉馬売買麦半番父風分聞米歩母方北毎妹万明鳴毛門夜野友用曜来里理話", "悪安暗医委意育員院飲運泳駅央横屋温化荷界開階寒感漢館岸起期客究急級宮球去橋業曲局銀区苦具君係軽血決研県庫湖向幸港号根祭皿仕死使始指歯詩次事持式実写者主守取酒受州拾終習集住重宿所暑助昭消商章勝乗植申身神真深進世整昔全相送想息速族他打対待代第題炭短談着注柱丁帳調追定庭笛鉄転都度投豆島湯登等動童農波配倍箱畑発反坂板皮悲美鼻筆氷表秒病品負部服福物平返勉放味命面問役薬由油有遊予羊洋葉陽様落流旅両緑礼列練路和", "愛案以衣位茨印英栄媛塩岡億加果貨課芽賀改械害街各覚潟完官管関観願岐希季旗器機議求泣給挙漁共協鏡競極熊訓軍郡群径景芸欠結建健験固功好香候康佐差菜最埼材崎昨札刷察参産散残氏司試児治滋辞鹿失借種周祝順初松笑唱焼照城縄臣信井成省清静席積折節説浅戦選然争倉巣束側続卒孫帯隊達単置仲沖兆低底的典伝徒努灯働特徳栃奈梨熱念敗梅博阪飯飛必票標不夫付府阜富副兵別辺変便包法望牧末満未民無約勇要養浴利陸良料量輪類令冷例連老労録", "圧囲移因永営衛易益液演応往桜可仮価河過快解格確額刊幹慣眼紀基寄規喜技義逆久旧救居許境均禁句型経潔件険検限現減故個護効厚耕航鉱構興講告混査再災妻採際在財罪殺雑酸賛士支史志枝師資飼示似識質舎謝授修述術準序招証象賞条状常情織職制性政勢精製税責績接設絶祖素総造像増則測属率損貸態団断築貯張停提程適統堂銅導得毒独任燃能破犯判版比肥非費備評貧布婦武復複仏粉編弁保墓報豊防貿暴脈務夢迷綿輸余容略留領歴", "胃異遺域宇映延沿恩我灰拡革閣割株干巻看簡危机揮貴疑吸供胸郷勤筋系敬警劇激穴券絹権憲源厳己呼誤后孝皇紅降鋼刻穀骨困砂座済裁策冊蚕至私姿視詞誌磁射捨尺若樹収宗就衆従縦縮熟純処署諸除承将傷障蒸針仁垂推寸盛聖誠舌宣専泉洗染銭善奏窓創装層操蔵臓存尊退宅担探誕段暖値宙忠著庁頂腸潮賃痛敵展討党糖届難乳認納脳派拝背肺俳班晩否批秘俵腹奮並陛閉片補暮宝訪亡忘棒枚幕密盟模訳郵優預幼欲翌乱卵覧裏律臨朗論", "亜哀挨曖握扱宛嵐依威為畏尉萎偉椅彙違維慰緯壱逸芋咽姻淫陰隠韻唄鬱畝浦詠影鋭疫悦越謁閲炎怨宴援煙猿鉛縁艶汚凹押旺欧殴翁奥憶臆虞乙俺卸穏佳苛架華菓渦嫁暇禍靴寡箇稼蚊牙瓦雅餓介戒怪拐悔皆塊楷潰壊懐諧劾崖涯慨蓋該概骸垣柿核殻郭較隔獲嚇穫岳顎掛括喝渇葛滑褐轄且釜鎌刈甘汗缶肝冠陥乾勘患貫喚堪換敢棺款閑勧寛歓監緩憾還環韓艦鑑含玩頑企伎忌奇祈軌既飢鬼亀幾棋棄毀畿輝騎宜偽欺儀戯擬犠菊吉喫詰却脚虐及丘朽臼糾嗅窮巨拒拠虚距御凶叫狂享況峡挟狭恐恭脅矯響驚仰暁凝巾斤菌琴僅緊錦謹襟吟駆惧愚偶遇隅串屈掘窟繰勲薫刑茎契恵啓掲渓蛍傾携継詣慶憬稽憩鶏迎鯨隙撃桁傑肩倹兼剣拳軒圏堅嫌献遣賢謙鍵繭顕懸幻玄弦舷股虎孤弧枯雇誇鼓錮顧互呉娯悟碁勾孔巧甲江坑抗攻更拘肯侯恒洪荒郊貢控梗喉慌硬絞項溝綱酵稿衡購乞拷剛傲豪克酷獄駒込頃昆恨婚痕紺魂墾懇沙唆詐鎖挫采砕宰栽彩斎債催塞歳載剤削柵索酢搾錯咲刹拶撮擦桟惨傘斬暫旨伺刺祉肢施恣脂紫嗣雌摯賜諮侍慈餌璽軸叱疾執湿嫉漆芝赦斜煮遮邪蛇酌釈爵寂朱狩殊珠腫趣寿呪需儒囚舟秀臭袖羞愁酬醜蹴襲汁充柔渋銃獣叔淑粛塾俊瞬旬巡盾准殉循潤遵庶緒如叙徐升召匠床抄肖尚昇沼宵症祥称渉紹訟掌晶焦硝粧詔奨詳彰憧衝償礁鐘丈冗浄剰畳壌嬢錠譲醸拭殖飾触嘱辱尻伸芯辛侵津唇娠振浸紳診寝慎審震薪刃尽迅甚陣尋腎須吹炊帥粋衰酔遂睡穂随髄枢崇据杉裾瀬是姓征斉牲凄逝婿誓請醒斥析脊隻惜戚跡籍拙窃摂仙占扇栓旋煎羨腺詮践箋潜遷薦繊鮮禅漸膳繕狙阻租措粗疎訴塑遡礎双壮荘捜挿桑掃曹曽爽喪痩葬僧遭槽踪燥霜騒藻憎贈即促捉俗賊遜汰妥唾堕惰駄耐怠胎泰堆袋逮替滞戴滝択沢卓拓託濯諾濁但脱奪棚誰丹旦胆淡嘆端綻鍛弾壇恥致遅痴稚緻畜逐蓄秩窒嫡抽衷酎鋳駐弔挑彫眺釣貼超跳徴嘲澄聴懲勅捗沈珍朕陳鎮椎墜塚漬坪爪鶴呈廷抵邸亭貞帝訂逓偵堤艇締諦泥摘滴溺迭哲徹撤添塡殿斗吐妬途渡塗賭奴怒到逃倒凍唐桃透悼盗陶塔搭棟痘筒稲踏謄藤闘騰洞胴瞳峠匿督篤凸突屯豚頓貪鈍曇丼那謎鍋軟尼弐匂虹尿妊忍寧捻粘悩濃把覇婆罵杯排廃輩培陪媒賠伯拍泊迫剝舶薄漠縛爆箸肌鉢髪伐抜罰閥氾帆汎伴畔般販斑搬煩頒範繁藩蛮盤妃彼披卑疲被扉碑罷避尾眉微膝肘匹泌姫漂苗描猫浜賓頻敏瓶扶怖附訃赴浮符普腐敷膚賦譜侮舞封伏幅覆払沸紛雰噴墳憤丙併柄塀幣弊蔽餅壁璧癖蔑偏遍哺捕舗募慕簿芳邦奉抱泡胞俸倣峰砲崩蜂飽褒縫乏忙坊妨房肪某冒剖紡傍帽貌膨謀頬朴睦僕墨撲没勃堀奔翻凡盆麻摩磨魔昧埋膜枕又抹慢漫魅岬蜜妙眠矛霧娘冥銘滅免麺茂妄盲耗猛網黙紋冶弥厄躍闇喩愉諭癒唯幽悠湧猶裕雄誘憂融与誉妖庸揚揺溶腰瘍踊窯擁謡抑沃翼拉裸羅雷頼絡酪辣濫藍欄吏痢履璃離慄柳竜粒隆硫侶虜慮了涼猟陵僚寮療瞭糧厘倫隣瑠涙累塁励戻鈴零霊隷齢麗暦劣烈裂恋廉錬呂炉賂露弄郎浪廊楼漏籠麓賄脇惑枠湾腕"];
+
+const standard = new Set(GRADES.flatMap(g => Array.from(g)));
+
+const KANJI = /^(?=\p{Script=Han}$)[^\u3005\u3006\u3007\u303B]$/u;
+
+const $ = id => document.getElementById(id), uid = () => crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random());
+
+const chars = s => Array.from(new Intl.Segmenter('ja', { granularity: 'grapheme' }).segment(s), x => x.segment);
+
+const freshMemo = () => ({
+    id: uid(),
+    name: '集計表1',
+    rows: ['行1'],
+    cols: ['列1'],
+    cells: {},
+    mode: 'check',
+    colModes: ['check'],
+    colStates: [null],
+    states: [
+        { name: '未設定', color: '#ffffff' },
+        { name: '完了', color: '#c9efcf' }
+    ]
+});
+
+const freshProject = (name = '集計A') => ({ id: uid(), name, middles: [], majors: [{ id: uid(), name: 'タグ1', color: '#dbeafe' }, { id: uid(), name: 'タグ2', color: '#ffe5c1' }], minors: [], entries: [], memos: [freshMemo()], memoId: null });
+
+let db;
+let storageDB = null;
+let saveQueue = Promise.resolve();
+let saveFailed = false;
+let pendingSaves = 0;
+
+function openStorageDB() {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open('KanjiNoteDB', 1);
+
+        request.onupgradeneeded = () => {
+            const database = request.result;
+
+            if (!database.objectStoreNames.contains('storage')) {
+                database.createObjectStore('storage');
+            }
+        };
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+        request.onblocked = () => reject(
+            new Error('別のタブでデータベースが使用されています')
+        );
+    });
+}
+
+function readStorage() {
+    return new Promise((resolve, reject) => {
+        const transaction = storageDB.transaction('storage', 'readonly');
+        const request = transaction.objectStore('storage').get('main');
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+        transaction.onabort = () => reject(transaction.error);
+    });
+}
+
+function writeStorage(data) {
+    return new Promise((resolve, reject) => {
+        const transaction = storageDB.transaction('storage', 'readwrite');
+
+        transaction.objectStore('storage').put(data, 'main');
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
+    });
+}
+
+function validDatabase(data) {
+    return data &&
+        Array.isArray(data.projects) &&
+        data.projects.length > 0;
+}
+
+async function loadDatabase() {
+    storageDB = await openStorageDB();
+
+    const saved = await readStorage();
+
+    // IndexedDBに保存済みの場合
+    if (saved !== undefined) {
+        if (!validDatabase(saved)) {
+            throw new Error('保存データの形式が正しくありません');
+        }
+
+        return saved;
+    }
+
+    // 初回のみlocalStorageから移行
+    const oldData = localStorage.getItem('kanjiNoteV1');
+
+    if (oldData !== null) {
+        const parsed = JSON.parse(oldData);
+
+        if (!validDatabase(parsed)) {
+            throw new Error('旧データの形式が正しくありません');
+        }
+
+        await writeStorage(parsed);
+
+        console.log('IndexedDBへの移行が完了しました');
+
+        return parsed;
+    }
+
+    // 保存データが存在しない場合のみ新規作成
+    const p = freshProject();
+
+    return {
+        projects: [p],
+        current: p.id,
+        defaultId: p.id,
+        sequence: 0
+    };
+}
+
+let editId = null, selectedCell = null, tab = 'table', expanded = {};
+
+// 直近の追加・編集を取り消すための履歴
+let lastAddUndo = null;
+
+// 直近の上書き詳細
+let overwriteDetails = new Map();
+
+function normalizeProject(p) {
+
+    p.majors ||= [];
+    p.middles ||= [];
+    p.minors ||= [];
+    p.entries ||= [];
+
+    p.middles.forEach(tag => {
+        tag.majorId ??= null;
+    });
+
+    p.minors.forEach(tag => {
+        tag.majorId ??= null;
+        tag.middleId ??= null;
+    });
+
+    p.entries.forEach(entry => {
+        entry.middleIds ||= [];
+        entry.minorIds ||= [];
+    });
+
+}
+
+const project = () => db.projects.find(p => p.id === db.current) || db.projects[0];
+
+const persist = () => {
+    if (!storageDB || !db) return Promise.resolve(false);
+
+    // 保存時点のデータをコピー
+    const snapshot = JSON.parse(JSON.stringify(db));
+
+    pendingSaves++;
+
+    // 保存処理を順番に実行
+    saveQueue = saveQueue
+        .then(() => writeStorage(snapshot))
+        .then(() => {
+            saveFailed = false;
+            return true;
+        })
+        .catch(e => {
+            console.error('IndexedDB保存エラー:', e);
+
+            if (!saveFailed) {
+                alert(
+                    '保存できませんでした。\n' +
+                    'JSONバックアップを保存してください。\n\n' +
+                    'エラー：' + (e?.message || e)
+                );
+            }
+
+            saveFailed = true;
+            return false;
+        })
+        .finally(() => {
+            pendingSaves--;
+        });
+
+    return saveQueue;
+};
+
+// 保存完了前にページを閉じる場合の警告
+window.addEventListener('beforeunload', e => {
+    if (pendingSaves > 0 || saveFailed) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function dialog(html) { $('dialogContent').innerHTML = html; $('dialog').showModal(); }
+
+function switchTab(t) { tab = t; document.querySelectorAll('section').forEach(e => e.classList.toggle('active', e.id === t)); document.querySelectorAll('.tabs button').forEach(e => e.classList.toggle('active', e.dataset.tab === t)); if (t === 'table')
+
+    renderTable(); if (t === 'add')
+
+    renderAdd(); if (t === 'priority') renderTagManagement(); if (t === 'memo')
+
+    renderMemo(); }
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => switchTab(b.dataset.tab));
+
+let startX = 0;
+
+document.querySelector('main').addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, { passive: true });
+
+document.querySelector('main').addEventListener('touchend', e => { if (e.target.closest('input,textarea,select,.tablewrap'))
+
+    return; const d = e.changedTouches[0].clientX - startX; if (Math.abs(d) > 100) {
+
+    const a = ['table', 'add', 'priority', 'memo'];
+
+    switchTab(a[Math.max(0, Math.min(3, a.indexOf(tab) + (d < 0 ? 1 : -1)))]);
+
+} }, { passive: true });
+
+function renderProjects() { const p = project(); $('project').innerHTML = db.projects.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join(''); $('project').value = p.id; $('defaultProject').checked = db.defaultId === p.id; }
+
+$('project').onchange = e => { db.current = e.target.value; editId = null; selectedCell = null; persist(); renderAll(); };
+
+$('defaultProject').onchange = e => { db.defaultId = e.target.checked ? project().id : null; persist(); };
+
+function manageProjects() {
+    dialog(`
+        <div style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            margin-bottom:20px;
+        ">
+            <h2 style="margin:0">
+                集計タグ管理
+            </h2>
+
+            <button
+                type="button"
+                class="dialog-back-button"
+                onclick="$('dialog').close()"
+            >
+                ← 戻る
+            </button>
+        </div>
+
+        ${db.projects.map(p => `
+            <div class="item">
+                ${esc(p.name)}
+                <button onclick="renameProject('${p.id}')">
+                    名前変更
+                </button>
+                <button
+                    class="danger"
+                    onclick="removeProject('${p.id}')"
+                >
+                    削除
+                </button>
+            </div>
+        `).join('')}
+
+        <p>
+            <button class="primary" onclick="createProject()">
+                集計タグを追加
+            </button>
+        </p>
+    `);
+}
+
+function createProject() { const name = prompt('新しい集計タグ名'); if (!name?.trim())
+
+    return; const p = freshProject(name.trim()); db.projects.push(p); db.current = p.id; persist(); $('dialog').close(); renderAll(); }
+
+function renameProject(id) { const p = db.projects.find(x => x.id === id), v = prompt('名前', p.name); if (v?.trim()) {
+
+    p.name = v.trim();
+
+    persist();
+
+    manageProjects();
+
+    renderProjects();
+
+} }
+
+function removeProject(id) { if (db.projects.length === 1)
+
+    return alert('最低1つ必要です'); if (!confirm('この集計タグのすべてのデータを削除しますか？'))
+
+    return; db.projects = db.projects.filter(p => p.id !== id); if (db.current === id)
+
+    db.current = db.projects[0].id; if (db.defaultId === id)
+
+    db.defaultId = db.current; persist(); manageProjects(); renderAll(); }
+
+function rank(p, e) {
+
+    const major = p.majors.findIndex(x => x.id === e.majorId);
+
+    const middle = Math.min(...(e.middleIds || []).map(id => { const i = p.middles.findIndex(x => x.id === id); return i < 0 ? 9999 : i; }), 9999);
+
+    const minor = Math.min(...(e.minorIds || []).map(id => { const i = p.minors.findIndex(x => x.id === id); return i < 0 ? 9999 : i; }), 9999);
+
+    return [major < 0 ? 9999 : major, middle, minor, e.seq ?? 9999];
+
+}
+
+function compare(p, a, b) {
+
+    const aa = rank(p, a), bb = rank(p, b);
+
+    for (let i = 0; i < aa.length; i++) if (aa[i] !== bb[i]) return aa[i] - bb[i];
+
+    return 0;
+
+}
+
+function occurrences(p, c) { return p.entries.filter(e => e.kanji.includes(c)).sort((a, b) => compare(p, a, b)); }
+
+function representative(p, c) { return occurrences(p, c)[0]; }
+
+function pruneLowerPriorityStandard(p) {
+
+    // 常用漢字は最優先の用法1件だけに所属させる。
+
+    // 常用漢字外は複数の用法をそのまま保持する。
+
+    const winner = new Map();
+
+    for (const entry of p.entries) {
+
+        for (const c of entry.kanji) {
+
+            if (!standard.has(c)) continue;
+
+            const prev = winner.get(c);
+
+            if (!prev || compare(p, entry, prev) < 0) winner.set(c, entry);
+
+        }
+
+    }
+
+    for (const entry of p.entries) {
+
+        entry.kanji = entry.kanji.filter(c => !standard.has(c) || winner.get(c) === entry);
+
+    }
+
+    p.entries = p.entries.filter(entry => entry.kanji.length > 0);
+
+}
+
+
+
+function filterSelected(id) { return [...$(id).selectedOptions].map(x => x.value); }
+
+const tagKinds = [
+    { kind:'Major', key:'majors', label:'大タグ' },
+    { kind:'Middle', key:'middles', label:'中タグ' },
+    { kind:'Minor', key:'minors', label:'小タグ' }
+];
+
+function tagVisibleForScope(kind, tag, selectedMajor, selectedMiddle) {
+    if (kind === 'Major') return true;
+    if (kind === 'Middle') return !selectedMajor.length || !tag.majorId || selectedMajor.includes(tag.majorId);
+    if (tag.middleId) {
+        const middle = project().middles.find(x => x.id === tag.middleId);
+        if (selectedMiddle.length) return selectedMiddle.includes(tag.middleId);
+        return !selectedMajor.length || !middle?.majorId || selectedMajor.includes(middle.majorId);
+    }
+    return !selectedMajor.length || !tag.majorId || selectedMajor.includes(tag.majorId);
+}
+
+const previousTagSelection = { Major: [], Middle: [], Minor: [] };
+
+// 使用されている自由タグを自動取得
+function renderFreeTagFilter() {
+    const p = project();
+    const select = $('filterFreeTag');
+    const wrap = $('freeTagFilterWrap');
+
+    // 現在の選択を保存
+    const previous = filterSelected('filterFreeTag');
+
+    const tags = [...new Set(
+        p.entries.flatMap(entry =>
+            (entry.freeTags || [])
+                .map(tag => String(tag).trim())
+                .filter(Boolean)
+        )
+    )].sort((a, b) => a.localeCompare(b, 'ja'));
+
+    // 自由タグが存在しない場合は非表示
+    wrap.style.display = tags.length ? '' : 'none';
+
+    select.innerHTML = tags.map(tag => `
+        <option value="${esc(tag)}"
+            ${previous.includes(tag) ? 'selected' : ''}>
+            ${esc(tag)}
+        </option>
+    `).join('');
+}
+
+function renderFilters() {
+
+    const p = project();
+
+    // 大 → 中 → 小の順番で候補を更新
+    for (const {kind, key} of tagKinds) {
+
+        const select = $('filter' + kind);
+        const old = filterSelected('filter' + kind);
+
+        const selectedMajor = filterSelected('filterMajor');
+        const selectedMiddle = filterSelected('filterMiddle');
+
+        const items = p[key].filter(tag =>
+            tagVisibleForScope(
+                kind,
+                tag,
+                selectedMajor,
+                selectedMiddle
+            )
+        );
+
+        // 有効な選択肢を1つだけ維持
+        const keep = old.find(id =>
+            items.some(tag => tag.id === id)
+        );
+
+        select.innerHTML = items.map(t => `
+            <option
+                value="${esc(t.id)}"
+                ${t.id === keep ? 'selected' : ''}
+            >
+                ${esc(t.name)}
+            </option>
+        `).join('');
+
+        previousTagSelection[kind] =
+            filterSelected('filter' + kind);
+    }
+
+    renderSelectedTagFilters();
+    updateTagSuggestions(false);
+}
+
+function renderSelectedTagFilters() {
+    const p=project(), target=$('selectedTagFilters');
+    const buttons=[];
+    for(const {kind,key,label} of tagKinds) {
+        for(const id of filterSelected('filter'+kind)) {
+            const tag=p[key].find(t=>t.id===id);
+            if(tag) buttons.push(`<button type="button" onclick="toggleTagFilter('${kind}','${id}')" title="クリックで解除">${label}：${esc(tag.name)} ×</button>`);
+        }
+    }
+    target.innerHTML=buttons.join('') || '<span class="muted">選択中のタグ：なし</span>';
+}
+
+function toggleTagFilter(kind,id) {
+    const select=$('filter'+kind);
+    const option=[...select.options].find(x=>x.value===id);
+    if(!option) return;
+    const wasSelected = option.selected;
+    for (const other of select.options) other.selected = false;
+    option.selected = !wasSelected;
+    onTagFilterChange();
+}
+
+function onTagFilterChange(event) {
+
+    for (const {kind} of tagKinds) {
+
+        const select = $('filter' + kind);
+        const chosen = [...select.selectedOptions];
+
+        if (chosen.length > 1) {
+
+            const newlySelected = chosen.find(option =>
+                !previousTagSelection[kind].includes(option.value)
+            );
+
+            const keep =
+                newlySelected || chosen[chosen.length - 1];
+
+            for (const option of select.options) {
+                option.selected = option === keep;
+            }
+        }
+    }
+
+    renderFilters();
+    renderTable();
+}
+
+// 大・中・小タグをクリックで選択・解除
+// 大・中・小タグは各1つのみ選択可能
+for (const {kind} of tagKinds) {
+
+    const select = $('filter' + kind);
+
+    // クリックによる選択・解除
+    select.addEventListener('mousedown', e => {
+
+        const option = e.target.closest('option');
+        if (!option) return;
+
+        e.preventDefault();
+
+        const wasSelected = option.selected;
+
+        for (const other of select.options) {
+            other.selected = false;
+        }
+
+        if (!wasSelected) {
+            option.selected = true;
+        }
+
+        select.focus();
+        onTagFilterChange();
+
+    });
+
+    // スマホ・キーボードなどによる選択変更にも対応
+    select.addEventListener('change', onTagFilterChange);
+}
+
+function openTagSuggestions() {
+
+    const input = $('tagSearchInput');
+
+    // ▼から開いた場合は空欄でも全候補を表示
+    if (!input.value.trim()) {
+
+        const p = project();
+        const selectedMajor = filterSelected('filterMajor');
+        const selectedMiddle = filterSelected('filterMiddle');
+
+        const results = [];
+
+        for (const {kind, key, label} of tagKinds) {
+
+            p[key].forEach(tag => {
+
+                if (!tagVisibleForScope(
+                    kind, tag, selectedMajor, selectedMiddle
+                )) return;
+
+                results.push({
+                    kind, tag, label,
+                    checked: filterSelected('filter' + kind).includes(tag.id)
+                });
+
+            });
+
+        }
+
+        $('tagSuggestions').innerHTML = results.map(
+            ({kind, tag, label, checked}) => `
+                <button
+                    type="button"
+                    class="tag-suggestion ${checked ? 'active' : ''}"
+                    onclick="selectSuggestedTag('${kind}','${tag.id}')"
+                >
+                    <span>${checked ? '☑' : '☐'}</span>
+                    ${esc(tag.name)}
+                    <small>${label}</small>
+                </button>
+            `
+        ).join('') || '<div class="muted" style="padding:10px">候補がありません</div>';
+
+        $('tagSuggestions').classList.remove('hiddenUI');
+        return;
+    }
+
+    updateTagSuggestions(true);
+
+}
+
+function closeTagSuggestions() { $('tagSuggestions').classList.add('hiddenUI'); }
+function toggleTagSuggestions() {
+    if($('tagSuggestions').classList.contains('hiddenUI')) openTagSuggestions();
+    else closeTagSuggestions();
+}
+
+// ひらがな・カタカナを統一して比較
+function normalizeTagSearch(text) {
+
+    return String(text)
+        .normalize('NFKC')
+        .replace(/[\u30A1-\u30F6]/g, char =>
+            String.fromCharCode(char.charCodeAt(0) - 0x60)
+        )
+        .toLocaleLowerCase('ja');
+
+}
+
+function updateTagSuggestions(open = true) {
+
+    const p = project();
+
+    const query = normalizeTagSearch(
+        $('tagSearchInput').value.trim()
+    );
+
+    // 入力が空ならサジェストを出さない
+    if (!query) {
+
+        $('tagSuggestions').innerHTML = '';
+
+        // 入力欄からの呼び出しでは閉じる
+        if (open) {
+            closeTagSuggestions();
+        }
+
+        return;
+    }
+
+    const selectedMajor = filterSelected('filterMajor');
+    const selectedMiddle = filterSelected('filterMiddle');
+
+    const results = [];
+
+    for (const {kind, key, label} of tagKinds) {
+
+        p[key].forEach(tag => {
+
+            // 上位タグによる候補制限
+            if (!tagVisibleForScope(
+                kind,
+                tag,
+                selectedMajor,
+                selectedMiddle
+            )) return;
+
+            // 正規化して先頭一致
+            if (!normalizeTagSearch(tag.name).startsWith(query)) {
+                return;
+            }
+
+            results.push({
+                kind,
+                tag,
+                label,
+                checked: filterSelected('filter' + kind)
+                    .includes(tag.id)
+            });
+
+        });
+
+    }
+
+    $('tagSuggestions').innerHTML = results.length
+        ? results.map(({kind, tag, label, checked}) => `
+
+            <button
+                type="button"
+                class="tag-suggestion ${checked ? 'active' : ''}"
+                onclick="selectSuggestedTag('${kind}','${tag.id}')"
+            >
+                <span>${checked ? '☑' : '☐'}</span>
+                ${esc(tag.name)}
+                <small>${label}</small>
+            </button>
+
+        `).join('')
+        : '<div class="muted" style="padding:10px">一致するタグがありません</div>';
+
+    if (open) {
+        $('tagSuggestions').classList.remove('hiddenUI');
+    }
+
+}
+
+function selectSuggestedTag(kind,id) {
+    const select=$('filter'+kind), option=[...select.options].find(x=>x.value===id);
+    if(!option) return;
+    const wasSelected = option.selected;
+    for (const other of select.options) other.selected = false;
+    option.selected = !wasSelected;
+    onTagFilterChange();
+    openTagSuggestions();
+    $('tagSearchInput').focus();
+}
+function tagSearchKeydown(e) {
+    if(e.key==='Escape') closeTagSuggestions();
+    if(e.key==='Enter') {
+        e.preventDefault();
+        const first=$('tagSuggestions').querySelector('.tag-suggestion');
+        if(first) first.click();
+    }
+}
+document.addEventListener('click',e => {
+    if(!e.target.closest('.tag-search-wrap')) closeTagSuggestions();
+});
+
+function searchKanji() {
+    const keyword = $('search').value.trim();
+    const p = project();
+    if (Array.from(keyword).length === 1 && KANJI.test(keyword) &&
+        (standard.has(keyword) || p.entries.some(e => e.kanji.includes(keyword)))) {
+        showChar(encodeURIComponent(keyword));
+        return;
+    }
+    renderTable();
+}
+$('search').onkeydown = e => { if (e.key === 'Enter' && !e.isComposing) searchKanji(); };
+
+// 選択したタグIDを条件として扱う（入力欄は候補選択専用）。
+function currentTagFilter() {
+    const result = {};
+
+    for (const [key, kind] of [
+        ['major', 'Major'],
+        ['middle', 'Middle'],
+        ['minor', 'Minor']
+    ]) {
+        result[key] = {
+            selected: filterSelected('filter' + kind)
+        };
+    }
+
+    result.freeTags = filterSelected('filterFreeTag');
+
+    result.active =
+        ['major', 'middle', 'minor'].some(
+            key => result[key].selected.length > 0
+        ) ||
+        result.freeTags.length > 0;
+
+    return result;
+}
+
+function matchesTagFilter(entry, f) {
+
+    for (const key of ['major', 'middle', 'minor']) {
+
+        const { selected } = f[key];
+
+        const ids = key === 'major'
+            ? [entry.majorId]
+            : (entry[key + 'Ids'] || []);
+
+        if (
+            selected.length &&
+            !ids.some(id => selected.includes(id))
+        ) {
+            return false;
+        }
+    }
+
+    // 自由タグの絞り込み（複数選択はOR）
+    if (f.freeTags.length) {
+        const tags = (entry.freeTags || [])
+            .map(tag => String(tag).trim());
+
+        if (!f.freeTags.some(tag => tags.includes(tag))) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+$('filterFreeTag').addEventListener('mousedown', e => {
+    if (e.target.tagName !== 'OPTION') return;
+
+    e.preventDefault();
+
+    const option = e.target;
+    option.selected = !option.selected;
+
+    $('filterFreeTag').focus();
+    renderTable();
+});
+
+$('filterFreeTag').addEventListener('change', () => {
+    renderTable();
+});
+
+function filteredOccurrences(p, c, f = currentTagFilter()) {
+    return occurrences(p, c).filter(e => matchesTagFilter(e, f));
+}
+
+function clearTagFilters() {
+
+    $('tagSearchInput').value = '';
+
+    for (const {kind} of tagKinds) {
+        for (const option of $('filter' + kind).options) {
+            option.selected = false;
+        }
+    }
+
+    // 自由タグも解除
+    $('filterFreeTag').value = '';
+
+    for (const option of $('filterFreeTag').options) {
+        option.selected = false;
+    }
+
+    renderFilters();
+    renderTable();
+    closeTagSuggestions();
+}
+
+// 切り替えボタンの有効・無効を更新
+function updateTagDisplayControls() {
+
+    const major = filterSelected('filterMajor');
+    const middle = filterSelected('filterMiddle');
+    const minor = filterSelected('filterMinor');
+
+    const mode = $('tagDisplayMode');
+    const higher = $('includeHigherMajors');
+
+    const hasSubTag =
+        middle.length > 0 ||
+        minor.length > 0 ||
+        !!$('filterFreeTag').value;
+
+    // 中・小タグが選択されたら登場モードに固定
+    mode.disabled = hasSubTag;
+
+    if (hasSubTag) {
+        mode.value = 'appeared';
+    }
+
+    // 大タグの優先順位を取得
+    const majorIndex = project().majors.findIndex(
+        tag => tag.id === major[0]
+    );
+
+    // 2番目以降の大タグを選んだ場合のみ有効
+    higher.disabled =
+        hasSubTag ||
+        mode.value !== 'missing' ||
+        major.length !== 1 ||
+        majorIndex <= 0;
+
+    if (higher.disabled) {
+        higher.checked = false;
+    }
+
+    $('includeHigherMajorsLabel').style.display =
+    higher.disabled ? 'none' : 'inline-flex';
+
+}
+
+
+// 未登場判定に使う大タグの範囲
+function getMissingMajorIds() {
+
+    const p = project();
+
+    const selected = filterSelected('filterMajor');
+
+    if (!selected.length) {
+        return [];
+    }
+
+    const index = p.majors.findIndex(
+        tag => tag.id === selected[0]
+    );
+
+    if (index < 0) {
+        return [];
+    }
+
+    // 上位を含めない場合
+    if (!$('includeHigherMajors').checked) {
+        return selected;
+    }
+
+    // 最上位から選択した大タグまで
+    return p.majors
+        .slice(0, index + 1)
+        .map(tag => tag.id);
+
+}
+
+function renderTable() {
+
+    renderFreeTagFilter();
+    updateTagDisplayControls();
+
+    const p = project();
+    const key = $('search').value.trim();
+    const f = currentTagFilter();
+
+    const matchesSearch = (c, entries) =>
+        !key || c.includes(key) ||
+        entries.some(e => e.word.includes(key));
+
+    // 学年ごとの表示内容・件数を作成
+    const gradeData = GRADES.map((grade, i) => {
+
+        const arr = Array.from(grade);
+
+        const visible = arr.filter(c => {
+
+            const entries = filteredOccurrences(p, c, f);
+
+            return isVisibleByTagMode(p, c, f) &&
+                matchesSearch(c, entries);
+
+        });
+
+        const used = arr.filter(c => {
+
+            if ($('tagDisplayMode').value === 'missing') {
+                return isVisibleByTagMode(p, c, f);
+            }
+
+            if (!f.active) {
+                return occurrences(p, c).length > 0;
+            }
+
+            return isVisibleByTagMode(p, c, f);
+
+        }).length;
+
+        return {
+            id: 'grade' + i,
+            label: i === 6
+                ? '中学生で習う漢字'
+                : `${i + 1}年生で習う漢字`,
+            total: arr.length,
+            used,
+            shown: f.active || key || $('tagDisplayMode').value === 'missing'
+            ? visible
+            : arr
+        };
+
+    });
+
+    // 小学生（1～6年生）の合計
+    const elementaryUsed = gradeData
+        .slice(0, 6)
+        .reduce((sum, g) => sum + g.used, 0);
+
+    const elementaryTotal = gradeData
+        .slice(0, 6)
+        .reduce((sum, g) => sum + g.total, 0);
+
+    // 常用漢字全体の合計
+    const standardUsed = gradeData
+        .reduce((sum, g) => sum + g.used, 0);
+
+    const standardTotal = gradeData
+        .reduce((sum, g) => sum + g.total, 0);
+
+    // 個別学年のHTML
+    function gradeHTML(g) {
+
+        return `
+            <div class="grade"
+                 onclick="toggleGrade('${g.id}')">
+                ${expanded[g.id] ? '▶' : '▼'}
+                ${g.label} (${g.used}/${g.total}) ${((g.used / g.total) * 100).toFixed(1)}%
+            </div>
+
+            <div class="grid"
+                 id="${g.id}"
+                 style="display:${expanded[g.id] ? 'none' : 'grid'}">
+                ${g.shown.map(c =>
+                    charButton(p, c, f, key)
+                ).join('')}
+            </div>
+        `;
+
+    }
+
+    // 小学生の学年一覧
+    const elementaryHTML = gradeData
+        .slice(0, 6)
+        .map(gradeHTML)
+        .join('');
+
+    // 中学生
+    const juniorHTML = gradeHTML(gradeData[6]);
+
+    // 常用漢字外
+    // タグ優先順位 → 登録順 → 単語内の文字順
+
+    const extraInfo = new Map();
+
+    for (const entry of p.entries) {
+
+        entry.kanji.forEach((char, index) => {
+
+            if (standard.has(char)) return;
+
+            const entries = filteredOccurrences(p, char, f);
+
+            if (!entries.some(e => e.id === entry.id)) {
+                return;
+            }
+
+            const previous = extraInfo.get(char);
+
+            // 優先順位が最も高い登録を採用
+            if (
+                !previous ||
+                compare(p, entry, previous.entry) < 0
+            ) {
+                extraInfo.set(char, {
+                    entry,
+                    index
+                });
+            }
+
+        });
+    }
+
+    const extras = [...extraInfo.keys()]
+        .filter(char =>
+            matchesSearch(
+                char,
+                filteredOccurrences(p, char, f)
+            )
+        )
+        .sort((a, b) => {
+
+            const aa = extraInfo.get(a);
+            const bb = extraInfo.get(b);
+
+            // 大タグ → 中タグ → 小タグ → 登録順
+            const priority = compare(
+                p,
+                aa.entry,
+                bb.entry
+            );
+
+            if (priority !== 0) {
+                return priority;
+            }
+
+            // 同じ登録なら単語内の文字順
+            return aa.index - bb.index;
+        });
+
+    // 全体のHTML
+    const html = `
+
+        <div class="grade"
+             onclick="toggleGrade('standard')">
+            ${expanded.standard ? '▶' : '▼'}
+            常用漢字 (${standardUsed}/${standardTotal}) ${((standardUsed / standardTotal) * 100).toFixed(1)}%
+        </div>
+
+        <div id="standard"
+             style="display:${expanded.standard ? 'none' : 'block'}">
+
+            <div class="grade"
+                 onclick="toggleGrade('elementary')">
+                ${expanded.elementary ? '▶' : '▼'}
+                小学生で習う漢字
+                (${elementaryUsed}/${elementaryTotal}) ${((elementaryUsed / elementaryTotal) * 100).toFixed(1)}%
+            </div>
+
+            <div id="elementary"
+                 style="display:${expanded.elementary ? 'none' : 'block'}">
+
+                ${elementaryHTML}
+
+            </div>
+
+            ${juniorHTML}
+
+        </div>
+
+        ${$('tagDisplayMode').value !== 'missing' ? `
+
+            <div class="grade"
+                onclick="toggleGrade('extra')">
+                ${expanded.extra ? '▶' : '▼'}
+                常用漢字外 ${extras.length}種類
+            </div>
+
+            <div id="extra"
+                class="grid"
+                style="display:${expanded.extra ? 'none' : 'grid'}">
+
+                ${extras.map(c =>
+                    charButton(p, c, f, key)
+                ).join('')}
+
+            </div>
+
+        ` : ''}
+    `;
+
+    $('kanjiGrids').innerHTML = html;
+
+}
+
+// タグ絞り込みで表示する漢字か判定
+function isVisibleByTagMode(p, c, f) {
+
+    const mode = $('tagDisplayMode').value;
+
+    // 未登場モード
+    if (mode === 'missing') {
+
+        // タグ未選択なら全登録データを対象
+        if (!f.active) {
+            return occurrences(p, c).length === 0;
+        }
+
+        const majorIds = getMissingMajorIds();
+
+        if (!majorIds.length) {
+            return filteredOccurrences(p, c, f).length === 0;
+        }
+
+        return !occurrences(p, c).some(entry =>
+            majorIds.includes(entry.majorId)
+        );
+    }
+
+    // 登場モード
+    if (!f.active) return true;
+
+    return filteredOccurrences(p, c, f).length > 0;
+}
+
+function charButton(p, c, f, key) {
+
+    const entries = filteredOccurrences(p, c, f);
+
+    const missingMode =
+        $('tagDisplayMode').value === 'missing';
+
+    // 未登場モードでは選択タグ内の登録を持たない扱い
+    const e = missingMode ? null : entries[0];
+
+    const major = p.majors.find(x =>
+        x.id === e?.majorId
+    );
+
+    const matches =
+        !key ||
+        c.includes(key) ||
+        entries.some(x => x.word.includes(key));
+
+    return `
+        <button
+            class="char ${e ? 'used' : ''} ${matches ? '' : 'hidden'}"
+            style="${major ? 'background:' + major.color + ';' : ''}"
+            onclick="showChar('${encodeURIComponent(c)}')"
+        >
+            ${esc(c)}
+        </button>
+    `;
+
+}
+
+function toggleGrade(id) {
+
+    expanded[id] = !expanded[id];
+
+    renderTable();
+
+}
+
+let holdTimer = null;
+
+function showChar(encoded) {
+    const c = decodeURIComponent(encoded);
+    const p = project();
+    const entries = filteredOccurrences(p, c);
+    const f = currentTagFilter();
+    dialog(`
+        <div class="kanji-detail-header">
+
+            <h2>${esc(c)}</h2>
+
+            <button
+                type="button"
+                class="kanji-detail-back"
+                onclick="document.getElementById('dialog').close()"
+            >
+                ← 戻る
+            </button>
+
+        </div>
+      <div class="muted">${standard.has(c) ? '常用漢字' : '常用漢字外'} / ${entries.length}件の用法${f.active ? '（絞り込み中）' : ''}</div>
+      <p class="muted">各用法を長押し（3秒）か、編集ボタンで編集できます。</p>
+      ${entries.length ? entries.map((e,i) => `<div class="subrow" data-entry="${e.id}">
+          <strong>${i === 0 ? '★ ' : ''}${esc(e.word)}</strong>
+          <div>${esc(p.majors.find(x => x.id === e.majorId)?.name || '未設定')}　${(e.middleIds || []).map(id => esc(p.middles.find(x => x.id === id)?.name || '')).filter(Boolean).join('、') || 'なし'}</div>
+          <div>${
+                [
+                    ...(e.minorIds || []).map(id =>
+                        p.minors.find(x => x.id === id)?.name || ''
+                    ),
+                    ...(e.freeTags || [])
+                ]
+                .map(name => String(name).trim())
+                .filter(Boolean)
+                .map(esc)
+                .join('　') || 'なし'
+            }</div>
+          <div>実機確認済み：${e.verified ? '✓' : '未確認'}</div>
+          <button onclick="editEntry('${e.id}')">編集</button>
+      </div>`).join('') : '<p>該当する登録はありません</p>'}`);
+    $('dialogContent').querySelectorAll('[data-entry]').forEach(el => {
+        const id = el.dataset.entry;
+        el.addEventListener('pointerdown', () => holdTimer = setTimeout(() => {
+            if (confirm('この用法を編集しますか？')) editEntry(id);
+        },3000));
+        for (const ev of ['pointerup','pointerleave','pointercancel'])
+            el.addEventListener(ev, () => clearTimeout(holdTimer));
+    });
+}
+
+// ============================================================
+// 漢字追加画面：タグ選択を維持して描画
+// ============================================================
+function getAddTagSelection() {
+    return {
+        majorId: $('major').value,
+        middleIds: [...document.querySelectorAll('.middleChoice:checked')]
+            .map(input => input.value),
+        minorIds: [...document.querySelectorAll('.minorChoice:checked')]
+            .map(input => input.value),
+        verified: $('verified').checked
+    };
+}
+
+function renderAdd() {
+
+    const p = project();
+
+    // 現在の選択を保存
+    const previous = getAddTagSelection();
+
+    // 大タグ一覧
+    $('major').innerHTML = p.majors.map(tag => `
+        <option value="${tag.id}">
+            ${esc(tag.name)}
+        </option>
+    `).join('');
+
+    // 選択を復元
+    if (p.majors.some(tag => tag.id === previous.majorId)) {
+        $('major').value = previous.majorId;
+    }
+
+    // 編集モード
+    if (editId) {
+
+        const entry = p.entries.find(
+            item => item.id === editId
+        );
+
+        if (entry) {
+
+            $('words').value = entry.word;
+            $('major').value = entry.majorId;
+            $('verified').checked = entry.verified;
+
+            // 編集する単語の自由タグを復元
+            for (let i = 1; i <= 3; i++) {
+                $(`freeTag${i}`).value = entry.freeTags?.[i - 1] || '';
+            }
+
+            renderLinkedTags(
+                entry.middleIds || [],
+                entry.minorIds || []
+            );
+
+            $('addTitle').textContent = '登録内容を編集';
+            $('saveButton').textContent = '変更を保存';
+            $('deleteButton').classList.remove('hiddenUI');
+
+            return;
+        }
+    }
+
+    // 通常モード
+    renderLinkedTags(
+        previous.middleIds,
+        previous.minorIds
+    );
+
+    $('verified').checked = previous.verified;
+
+    $('addTitle').textContent = '単語から漢字を追加';
+    $('saveButton').textContent = '追加する';
+    $('deleteButton').classList.add('hiddenUI');
+
+    // 大タグを変更すると中タグを切り替える
+    $('major').onchange = () => {
+
+        renderLinkedTags([], []);
+
+    };
+
+}
+
+function countCombinedTags() {
+    const minorCount = document.querySelectorAll(
+        '.minorChoice:checked'
+    ).length;
+
+    const freeCount = [1, 2, 3].filter(i =>
+        $(`freeTag${i}`).value.trim() !== ''
+    ).length;
+
+    return minorCount + freeCount;
+}
+
+function validateTagCount() {
+    if (countCombinedTags() > 5) {
+        alert('小タグと自由タグは合わせて5つまでです');
+        return false;
+    }
+    return true;
+}
+
+function updateFreeTagLimits() {
+    const minorCount = document.querySelectorAll(
+        '.minorChoice:checked'
+    ).length;
+
+    const inputs = [1, 2, 3].map(i => $(`freeTag${i}`));
+
+    const filledCount = inputs.filter(input =>
+        input.value.trim() !== ''
+    ).length;
+
+    inputs.forEach(input => {
+        input.disabled =
+            input.value.trim() === '' &&
+            minorCount + filledCount >= 5;
+    });
+}
+
+/* ========================================
+   親タグに応じた中タグ・小タグの表示
+======================================== */
+
+function renderLinkedTags(
+    selectedMiddleIds = [],
+    selectedMinorIds = []
+) {
+
+    // 既存データに複数の中タグがあっても1つだけ復元
+    selectedMiddleIds = selectedMiddleIds.slice(0, 1);
+
+    const p = project();
+
+    const majorId = $('major').value;
+
+    // 選択中の大タグに所属する中タグ
+    const middles = p.middles.filter(tag => {
+
+        // 専属なし、または現在の大タグに専属
+        return !tag.majorId || tag.majorId === majorId;
+
+    });
+
+    $('middleChecks').innerHTML = middles.map(tag => `
+
+        <label>
+            <input
+                type="checkbox"
+                class="middleChoice"
+                value="${tag.id}"
+                ${selectedMiddleIds.includes(tag.id) ? 'checked' : ''}
+            >
+            ${esc(tag.name)}
+        </label>
+
+    `).join('');
+
+    // 中タグは最大1つだけ選択可能
+    document.querySelectorAll('.middleChoice').forEach(input => {
+
+        input.onchange = () => {
+
+            if (input.checked) {
+
+                // 選択した中タグ以外を解除
+                document.querySelectorAll('.middleChoice').forEach(other => {
+                    if (other !== input) {
+                        other.checked = false;
+                    }
+                });
+
+            }
+
+            // 小タグの候補を更新
+            renderLinkedMinors();
+
+        };
+
+    });
+
+    renderLinkedMinors(selectedMinorIds);
+
+}
+
+
+/* ========================================
+   選択中の中タグに所属する小タグ
+======================================== */
+
+function renderLinkedMinors(selectedMinorIds = null) {
+
+    const p = project();
+
+    // 再描画前の選択を保持
+    if (selectedMinorIds === null) {
+
+        selectedMinorIds = [
+            ...document.querySelectorAll('.minorChoice:checked')
+        ].map(input => input.value);
+
+    }
+
+    const middleIds = [
+        ...document.querySelectorAll('.middleChoice:checked')
+    ].map(input => input.value);
+
+    // 選択された中タグの子だけ表示
+    const majorId = $('major').value;
+
+        const minors = p.minors.filter(tag => {
+
+            // 中タグ専属
+            if (tag.middleId) {
+                return middleIds.includes(tag.middleId);
+            }
+
+            // 大タグ専属
+            if (tag.majorId) {
+                return tag.majorId === majorId;
+            }
+
+            // 専属なし
+            return true;
+
+        });
+
+    $('minorChecks').innerHTML = minors.map(tag => `
+
+        <label>
+            <input
+                type="checkbox"
+                class="minorChoice"
+                value="${tag.id}"
+                ${selectedMinorIds.includes(tag.id) ? 'checked' : ''}
+            >
+            ${esc(tag.name)}
+        </label>
+
+    `).join('');
+
+    // 小タグ＋自由タグは合計最大5つ
+    document.querySelectorAll('.minorChoice').forEach(input => {
+        input.onchange = () => {
+            if (!validateTagCount()) {
+                input.checked = false;
+            }
+            updateFreeTagLimits();
+        };
+    });
+
+    updateFreeTagLimits();
+
+}
+
+function resetEditor() {
+    editId = null;
+    $('words').value = '';
+    for (let i = 1; i <= 3; i++) {
+        $(`freeTag${i}`).value = '';
+    }
+    $('verified').checked = true;
+    $('addMessage').textContent = '';
+
+    // リザルトを消したら取り消し履歴も破棄
+    lastAddUndo = null;
+
+    // 入力クリアはタグを変更しない。
+    renderAdd();
+}
+
+function editEntry(id) {
+    editId = id;
+    $('dialog').close();
+    switchTab('add');
+}
+
+function saveWords() {
+    const p = project();
+    const words = $('words').value
+        .split(/[\n\r,，、]+/)
+        .map(word => word.trim())
+        .filter(Boolean);
+
+    const majorId = $('major').value;
+    const middleIds = [...document.querySelectorAll('.middleChoice:checked')]
+        .slice(0, 1)
+        .map(input => input.value);
+    const minorIds = [...document.querySelectorAll('.minorChoice:checked')]
+        .map(input => input.value);
+    const verified = $('verified').checked;
+
+    if (!validateTagCount()) return;
+
+    const freeTags = [
+        $('freeTag1').value.trim(),
+        $('freeTag2').value.trim(),
+        $('freeTag3').value.trim()
+    ];
+
+    if (!words.length || !majorId) {
+        alert('単語と大タグを指定してください');
+        return;
+    }
+
+        if (editId && words.length !== 1) {
+            alert('編集時は1単語だけ入力してください');
+            return;
+        }
+
+        // 追加・編集する直前の状態を保存
+        lastAddUndo = {
+            projectId: p.id,
+
+            // 上書きで消える漢字も含めて保存
+            entries: structuredClone(p.entries),
+
+            // 登録番号も元に戻せるよう保存
+            sequence: db.sequence,
+
+            // 入力画面の状態
+            words: $('words').value,
+            editId: editId,
+            majorId: majorId,
+            middleIds: [...middleIds],
+            minorIds: [...minorIds],
+            freeTags: [...freeTags],
+            verified: verified
+        };
+
+        const messages = [];
+
+    // 保存前に登録されていた漢字
+    const beforeKanji = new Set(
+        p.entries.flatMap(entry => entry.kanji)
+    );
+
+    // 保存前に、各漢字をどの登録が代表しているか記録
+    // 常用漢字・非常用漢字の両方を対象とする
+    const beforeWinners = new Map();
+
+    for (const char of beforeKanji) {
+        const winner = representative(p, char);
+
+        if (winner) {
+            beforeWinners.set(char, winner.id);
+        }
+    }
+
+    // 保存前に存在していた登録ID
+    const beforeEntryIds = new Set(
+        p.entries.map(entry => entry.id)
+    );
+
+    // 今回入力した単語と抽出漢字を記録
+    const resultWords = [];
+    const savedEntryIds = new Set();
+
+    for (const word of words) {
+        const kanji = [...new Set(chars(word).filter(char => KANJI.test(char)))];
+        resultWords.push({ word, kanji });
+
+        if (!kanji.length) {
+            messages.push(`${word}：漢字なし`);
+            continue;
+        }
+
+        const old = editId
+            ? p.entries.find(entry => entry.id === editId)
+            : null;
+
+        const entry = {
+            id: old?.id || uid(),
+            word,
+            kanji,
+            majorId,
+            middleIds,
+            minorIds,
+            freeTags: [...freeTags],
+            verified,
+            seq: old?.seq ?? ++db.sequence,
+            createdAt: old?.createdAt ?? new Date().toISOString()
+        };
+
+        if (old) {
+            Object.assign(old, entry);
+        } else {
+            p.entries.push(entry);
+        }
+
+        savedEntryIds.add(entry.id);
+
+        messages.push(`${kanji.join('、')} を${old ? '更新' : '追加'}しました`);
+
+        for (const char of kanji) {
+            if (!old && standard.has(char) && occurrences(p, char).length > 1) {
+                messages.push(`${char}：既にこの字は使われています（優先順位に従い表示）`);
+            }
+        }
+    }
+
+    pruneLowerPriorityStandard(p);
+    persist();
+
+    // 保存後に実際に登録されている漢字
+    const afterKanji = new Set(
+        p.entries.flatMap(entry => entry.kanji)
+    );
+
+    // 今回新しく登録された漢字
+    const addedKanji = new Set(
+        [...afterKanji].filter(char => !beforeKanji.has(char))
+    );
+
+    // 上書き・位置上書きの判定
+    const overwrittenKanji = new Set();
+    const positionOverwrittenKanji = new Set();
+
+    overwriteDetails.clear();
+
+    for (const char of afterKanji) {
+
+        const beforeId = beforeWinners.get(char);
+        const afterEntry = representative(p, char);
+
+        if (
+            beforeId &&
+            afterEntry &&
+            beforeId !== afterEntry.id &&
+            savedEntryIds.has(afterEntry.id)
+        ) {
+
+            const isStandard = standard.has(char);
+
+            if (isStandard) {
+                // 常用漢字の上書き
+                overwrittenKanji.add(char);
+            } else {
+                // 非常用漢字の位置上書き
+                positionOverwrittenKanji.add(char);
+            }
+
+            // 上書き前の登録情報を取得
+            const beforeEntry = lastAddUndo.entries.find(
+                entry => entry.id === beforeId
+            );
+
+            // 上書き前後の情報を保存
+            if (beforeEntry) {
+                overwriteDetails.set(char, {
+                    type: isStandard ? 'overwrite' : 'position',
+                    before: getOverwriteInfo(p, beforeEntry),
+                    after: getOverwriteInfo(p, afterEntry)
+                });
+            }
+        }
+    }
+
+    // 今回保存した新規エントリー
+    const newEntries = p.entries.filter(
+        entry => !beforeEntryIds.has(entry.id)
+    );
+
+    // 所属先が変わらず、用法だけ追加された非常用漢字
+    const extraKanji = new Set(
+        newEntries.flatMap(entry => entry.kanji).filter(char =>
+            !standard.has(char) &&
+            beforeKanji.has(char) &&
+            !positionOverwrittenKanji.has(char)
+        )
+    );
+
+    // リザルトに設定タグを表示
+    const majorName = p.majors.find(
+        tag => tag.id === majorId
+    )?.name || 'なし';
+
+    const middleNames = middleIds.map(id =>
+        p.middles.find(tag => tag.id === id)?.name
+    ).filter(Boolean);
+
+    const minorNames = minorIds.map(id =>
+        p.minors.find(tag => tag.id === id)?.name
+    ).filter(Boolean);
+
+    const resultTagsHtml = `
+        <div style="
+            margin:6px 0;
+            font-size:13px;
+            line-height:1.5;
+            color:#52627a;
+            overflow-wrap:anywhere;
+        ">
+            <strong>タグ：</strong>
+            ${[
+                majorName,
+                ...middleNames,
+                ...minorNames
+            ].map(esc).join(' › ')}
+
+            ${freeTags.filter(Boolean).length
+                ? ' ｜ ' + freeTags.filter(Boolean).map(esc).join('・')
+                : ''}
+        </div>
+    `;
+
+    // リザルト表示
+    const resultHtml = resultWords.map(({ word, kanji }) => {
+        if (!kanji.length) {
+            return `<div>${esc(word)}：漢字なし</div>`;
+        }
+
+        const charsHtml = kanji.map(char => {
+            const safe = esc(char);
+
+            // 常用漢字・非常用漢字共通の新規登録
+            if (addedKanji.has(char)) {
+                return `<span class="new-kanji">${safe}</span>`;
+            }
+
+            // 常用漢字の上書き
+            if (overwrittenKanji.has(char)) {
+                return `
+                    <span class="new-kanji">${safe}<button
+                        type="button"
+                        class="overwrite-link"
+                        onclick="showOverwriteDetail('${safe}')"
+                    >（上書き）</button></span>
+                `;
+            }
+
+            // 非常用漢字の位置上書き
+            if (positionOverwrittenKanji.has(char)) {
+                return `
+                    <span class="new-kanji">${safe}<button
+                        type="button"
+                        class="overwrite-link"
+                        onclick="showOverwriteDetail('${safe}')"
+                    >（位置上書き）</button></span>
+                `;
+            }
+
+            // 非常用漢字の用法追加
+            if (extraKanji.has(char)) {
+                return `${safe}<span class="extra-kanji-label">（常用外追加）</span>`;
+            }
+
+            // 変更なし
+            return safe;
+
+        }).join('、');
+
+        return `<div>${esc(word)}：${charsHtml}</div>`;
+    }).join('');
+
+        $('addMessage').innerHTML = `
+            <div style="
+                display:flex;
+                align-items:center;
+                justify-content:space-between;
+                gap:8px;
+            ">
+                <strong>追加リザルト</strong>
+
+                <button
+                    type="button"
+                    class="undo-button"
+                    onclick="undoLastAdd()"
+                >
+                    ↶ 取り消し
+                </button>
+            </div>
+
+            ${resultTagsHtml}
+
+            <div style="margin-top:3px">
+                ${resultHtml}
+            </div>
+
+            <div class="muted" style="margin-top:3px">
+                新規登録：${addedKanji.size}文字
+                ${overwrittenKanji.size
+                    ? ` / 上書き：${overwrittenKanji.size}文字`
+                    : ''}
+                ${positionOverwrittenKanji.size
+                    ? ` / 位置上書き：${positionOverwrittenKanji.size}文字`
+                    : ''}
+                ${extraKanji.size
+                    ? ` / 常用外追加：${extraKanji.size}文字`
+                    : ''}
+            </div>
+        `;
+    editId = null;
+
+    // 単語だけ消し、大タグ・中タグ・小タグ・実機確認は保持する。
+    $('words').value = '';
+    renderAdd();
+    renderTable();
+
+    if ($('scrollToResult').checked) {
+        $('addMessage').scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+        });
+    }
+}
+
+// 上書き詳細用の登録情報を取得
+function getOverwriteInfo(p, entry) {
+
+    const major = p.majors.find(
+        tag => tag.id === entry.majorId
+    )?.name || 'なし';
+
+    const middle = (entry.middleIds || [])
+        .map(id => p.middles.find(
+            tag => tag.id === id
+        )?.name)
+        .filter(Boolean)
+        .join('・') || 'なし';
+
+    const minor = (entry.minorIds || [])
+        .map(id => p.minors.find(
+            tag => tag.id === id
+        )?.name)
+        .filter(Boolean)
+        .join('・') || 'なし';
+
+    const free = (entry.freeTags || [])
+        .filter(Boolean)
+        .join('・') || 'なし';
+
+    return {
+        word: entry.word,
+        major,
+        middle,
+        minor,
+        free,
+        verified: entry.verified
+    };
+}
+
+
+// 上書き詳細画面を表示
+function showOverwriteDetail(char) {
+
+    const detail = overwriteDetails.get(char);
+
+    if (!detail) {
+        alert('上書き詳細が見つかりません');
+        return;
+    }
+
+    const renderInfo = (info, title, color) => `
+        <div style="
+            border:1px solid ${color};
+            border-radius:10px;
+            padding:12px;
+            margin:8px 0;
+            overflow-wrap:anywhere;
+        ">
+
+            <div style="
+                color:${color};
+                font-weight:700;
+                font-size:14px;
+            ">
+                ${title}
+            </div>
+
+            <div style="
+                font-size:21px;
+                font-weight:700;
+                margin:6px 0;
+            ">
+                ${esc(info.word)}
+            </div>
+
+            <hr style="
+                border:0;
+                border-top:1px solid #dce3ed;
+            ">
+
+            <div>大タグ：${esc(info.major)}</div>
+            <div>中タグ：${esc(info.middle)}</div>
+            <div>小タグ：${esc(info.minor)}</div>
+            <div>自由タグ：${esc(info.free)}</div>
+
+            <div class="muted" style="margin-top:5px">
+                実機確認：${info.verified ? '確認済み' : '未確認'}
+            </div>
+
+        </div>
+    `;
+
+    dialog(`
+
+        <div class="kanji-detail-header">
+
+            <div>
+                <h2>${esc(char)}</h2>
+                <strong>${detail.type === 'position'
+                    ? '位置上書き詳細'
+                    : '上書き詳細'}</strong>
+            </div>
+
+            <button
+                type="button"
+                class="kanji-detail-back"
+                onclick="$('dialog').close()"
+            >
+                ← 戻る
+            </button>
+
+        </div>
+
+        ${renderInfo(
+            detail.before,
+            '上書き前',
+            '#b45353'
+        )}
+
+        <div style="
+            text-align:center;
+            font-size:26px;
+            font-weight:700;
+            color:#65758a;
+        ">
+            ↓
+        </div>
+
+        ${renderInfo(
+            detail.after,
+            '上書き後',
+            '#245db4'
+        )}
+
+        ${detail.type === 'position' ? `
+            <div class="notice">
+                表示上の所属先が変更されました。
+                以前の用法も引き続き保存されています。
+            </div>
+        ` : ''}
+
+    `);
+}
+
+function undoLastAdd() {
+
+    // 取り消し履歴がない場合
+    if (!lastAddUndo) {
+        alert('取り消せる追加履歴がありません');
+        return;
+    }
+
+    // 取り消し確認
+    if (!confirm(
+        '直前の追加を取り消しますか？\n\n' +
+        '追加・上書きされた漢字を元に戻し、\n' +
+        '追加前の状態を復元します。'
+    )) {
+        return;
+    }
+
+    const undo = lastAddUndo;
+
+    // 追加した集計を取得
+    const p = db.projects.find(
+        item => item.id === undo.projectId
+    );
+
+    if (!p) {
+        alert('対象の集計が見つかりません');
+        return;
+    }
+
+    // 別の集計を開いている場合
+    if (project().id !== undo.projectId) {
+        alert('追加した集計に戻してから取り消してください');
+        return;
+    }
+
+    // 追加前の登録状態を復元
+    // 新規追加・編集・上書きをまとめて元に戻す
+    p.entries = structuredClone(undo.entries);
+
+    // 登録番号も復元
+    db.sequence = undo.sequence;
+
+    // 取り消し履歴を消去
+    lastAddUndo = null;
+
+    // 復元した内容を保存
+    persist();
+
+    // 追加画面に戻る
+    editId = undo.editId;
+    switchTab('add');
+
+    // 入力していた単語を復元
+    $('words').value = undo.words;
+
+    // 大タグを復元
+    $('major').value = undo.majorId;
+
+    // 実機確認済みを復元
+    $('verified').checked = undo.verified;
+
+    // 自由タグを復元
+    for (let i = 1; i <= 3; i++) {
+        $(`freeTag${i}`).value =
+            undo.freeTags[i - 1] || '';
+    }
+
+    // 中タグ・小タグを復元
+    renderLinkedTags(
+        undo.middleIds,
+        undo.minorIds
+    );
+
+    updateFreeTagLimits();
+
+    // リザルトを消去
+    $('addMessage').textContent = '';
+
+    // 漢字表を最新状態に更新
+    renderTable();
+
+    // 追加画面の先頭へ戻る
+    $('words').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+
+function deleteEdit() { if (!editId || !confirm('この単語の登録を削除しますか？'))
+
+    return; const p = project(); p.entries = p.entries.filter(e => e.id !== editId); persist(); resetEditor(); renderTable(); $('addMessage').textContent = '登録を削除しました'; }
+
+/* ========================================
+   タグ順番指定：一覧表示
+======================================== */
+
+function renderTagManagement() {
+
+    const p = project();
+
+    // ここから追加
+    const middleFilter = $('middleDisplayFilter');
+    const minorFilter = $('minorDisplayFilter');
+
+    // 初回表示・集計切り替え時は最優先の大タグを選択
+        const projectChanged =
+            renderTagManagement.lastProjectId !== p.id;
+
+        const strongestMajor = p.majors[0];
+
+        const initialValue = strongestMajor
+            ? `major:${strongestMajor.id}`
+            : 'all';
+
+        const middleValue = projectChanged
+            ? initialValue
+            : middleFilter.value;
+
+        const minorValue = projectChanged
+            ? initialValue
+            : minorFilter.value;
+
+        renderTagManagement.lastProjectId = p.id;
+
+    function setFilterOptions(select, options, selected) {
+        select.innerHTML = options.map(option => `
+            <option value="${esc(option.value)}">
+                ${esc(option.label)}
+            </option>
+        `).join('');
+
+        select.value = [...select.options].some(
+            option => option.value === selected
+        ) ? selected : 'all';
+    }
+
+    const majorOptions = p.majors.map(tag => ({
+        value: `major:${tag.id}`,
+        label: `大タグ：${tag.name}`
+    }));
+
+    setFilterOptions(middleFilter, [
+        { value: 'all', label: 'すべて' },
+        { value: 'none', label: '共通のみ' },
+        ...majorOptions
+    ], middleValue);
+
+    setFilterOptions(minorFilter, [
+        { value: 'all', label: 'すべて' },
+        { value: 'none', label: '共通のみ' },
+        ...majorOptions,
+        ...p.middles.map(tag => ({
+            value: `middle:${tag.id}`,
+            label: `中タグ：${tag.name}`
+        }))
+    ], minorValue);
+
+    // タグの一覧を生成する
+    function createTagList(key) {
+
+        let visibleTags = p[key];
+
+        if (key === 'middles') {
+            const filter = middleFilter.value;
+
+            if (filter === 'none') {
+                visibleTags = visibleTags.filter(tag => !tag.majorId);
+            } else if (filter.startsWith('major:')) {
+                const majorId = filter.slice(6);
+
+                visibleTags = visibleTags.filter(
+                    tag => tag.majorId === majorId
+                );
+            }
+        }
+
+        if (key === 'minors') {
+            const filter = minorFilter.value;
+
+            if (filter === 'none') {
+                visibleTags = visibleTags.filter(
+                    tag => !tag.majorId && !tag.middleId
+                );
+            } else if (filter.startsWith('major:')) {
+                const majorId = filter.slice(6);
+
+                visibleTags = visibleTags.filter(tag => {
+                    if (tag.majorId === majorId) return true;
+
+                    const middle = p.middles.find(
+                        m => m.id === tag.middleId
+                    );
+
+                    return middle?.majorId === majorId;
+                });
+            } else if (filter.startsWith('middle:')) {
+                const middleId = filter.slice(7);
+
+                visibleTags = visibleTags.filter(
+                    tag => tag.middleId === middleId
+                );
+            }
+        }
+
+        return visibleTags.map(tag => {
+            // 大タグのみ設定色を使用
+            const isMajor = key === 'majors';
+
+            const color = isMajor
+                ? tag.color
+                : '#edf2fa';
+
+            const className = isMajor
+                ? 'tag-order-button'
+                : 'tag-order-button sub-tag';
+
+            return `
+                <button
+                    type="button"
+                    class="${className}"
+                    style="background:${esc(color)}"
+                    onclick="openTagEditor('${key}', '${tag.id}')"
+                >
+                    ${esc(tag.name)}
+                </button>
+            `;
+
+        }).join('');
+
+    }
+
+    // 大タグ
+    $('majorList').innerHTML = `
+        <div class="tag-order-list">
+            ${createTagList('majors')}
+        </div>
+    `;
+
+    // 中タグ
+    $('middleList').innerHTML = `
+        <div class="tag-order-list">
+            ${createTagList('middles')}
+        </div>
+    `;
+
+    // 小タグ
+    $('minorList').innerHTML = `
+        <div class="tag-order-list">
+            ${createTagList('minors')}
+        </div>
+    `;
+
+    // ========================================
+    // 中タグの所属先
+    // ========================================
+
+    const middleParent = $('newMiddleParent');
+    const oldMiddleParent = middleParent.value;
+
+    middleParent.innerHTML = `
+        <option value="none">専属なし（共通）</option>
+
+        ${p.majors.map(tag => `
+            <option value="${tag.id}">
+                大タグ：${esc(tag.name)}
+            </option>
+        `).join('')}
+    `;
+
+    if ([...middleParent.options].some(
+        option => option.value === oldMiddleParent
+    )) {
+        middleParent.value = oldMiddleParent;
+    }
+
+
+    // ========================================
+    // 小タグの所属先
+    // ========================================
+
+    const minorParent = $('newMinorParent');
+    const oldMinorParent = minorParent.value;
+
+    minorParent.innerHTML = `
+        <option value="none">専属なし（共通）</option>
+
+        <optgroup label="大タグ専属">
+            ${p.majors.map(tag => `
+                <option value="major:${tag.id}">
+                    ${esc(tag.name)}
+                </option>
+            `).join('')}
+        </optgroup>
+
+        <optgroup label="中タグ専属">
+            ${p.middles.map(tag => {
+
+                const parent = p.majors.find(
+                    major => major.id === tag.majorId
+                );
+
+                const parentName = parent
+                    ? parent.name
+                    : '共通';
+
+                return `
+                    <option value="middle:${tag.id}">
+                        ${esc(parentName)} ＞ ${esc(tag.name)}
+                    </option>
+                `;
+
+            }).join('')}
+        </optgroup>
+    `;
+
+    if ([...minorParent.options].some(
+        option => option.value === oldMinorParent
+    )) {
+        minorParent.value = oldMinorParent;
+    }
+}
+
+/* ========================================
+   タグ編集画面を開く
+======================================== */
+
+function openTagEditor(key, id) {
+
+    const p = project();
+
+    // 対象のタグ一覧
+    const tags = p[key];
+
+    // 編集対象
+    const tag = tags.find(x => x.id === id);
+
+    if (!tag) {
+        return;
+    }
+
+    // 現在の位置
+    const currentIndex = tags.findIndex(
+        x => x.id === id
+    );
+
+    // 大タグかどうか
+    const isMajor = key === 'majors';
+
+    // タグの種類
+    const tagType = {
+        majors: '大タグ',
+        middles: '中タグ',
+        minors: '小タグ'
+    }[key];
+
+    /* ------------------------------------
+       移動先の選択肢
+    ------------------------------------ */
+
+    let positionOptions = `
+        <option value="keep">
+            現在の位置のまま
+        </option>
+
+        <option value="first">
+            一番上
+        </option>
+
+        <option value="last">
+            一番下
+        </option>
+    `;
+
+        // 同じ紐付け先のタグだけを移動先に表示
+        const sameParentTags = tags.filter(other => {
+
+            if (key === 'majors') {
+                return true;
+            }
+
+            if (key === 'middles') {
+                return (other.majorId || null) ===
+                    (tag.majorId || null);
+            }
+
+            if (key === 'minors') {
+                return (other.majorId || null) ===
+                        (tag.majorId || null)
+                    && (other.middleId || null) ===
+                        (tag.middleId || null);
+            }
+
+            return false;
+        });
+
+        sameParentTags.forEach(other => {
+
+            if (other.id === id) return;
+
+            positionOptions += `
+                <option value="before:${other.id}">
+                    ${esc(other.name)} の上
+                </option>
+
+                <option value="after:${other.id}">
+                    ${esc(other.name)} の下
+                </option>
+            `;
+        });
+
+    // ========================================
+    // 所属先変更の選択肢
+    // ========================================
+
+    let parentOptions = '';
+    let currentParent = 'none';
+
+    if (key === 'middles') {
+
+        currentParent = tag.majorId || 'none';
+
+        parentOptions = `
+            <option value="none">専属なし（共通）</option>
+
+            ${p.majors.map(major => `
+                <option value="${major.id}">
+                    大タグ：${esc(major.name)}
+                </option>
+            `).join('')}
+        `;
+
+    } else if (key === 'minors') {
+
+        if (tag.middleId) {
+            currentParent = `middle:${tag.middleId}`;
+        } else if (tag.majorId) {
+            currentParent = `major:${tag.majorId}`;
+        }
+
+        parentOptions = `
+            <option value="none">専属なし（共通）</option>
+
+            <optgroup label="大タグ専属">
+                ${p.majors.map(major => `
+                    <option value="major:${major.id}">
+                        ${esc(major.name)}
+                    </option>
+                `).join('')}
+            </optgroup>
+
+            <optgroup label="中タグ専属">
+                ${p.middles.map(middle => `
+                    <option value="middle:${middle.id}">
+                        ${esc(middle.name)}
+                    </option>
+                `).join('')}
+            </optgroup>
+        `;
+
+    }
+
+    // 現在の所属先を選択済みにする
+    parentOptions = parentOptions.replace(
+        new RegExp(`value="${currentParent}"`),
+        `value="${currentParent}" selected`
+    );
+
+    /* ------------------------------------
+       編集画面
+    ------------------------------------ */
+
+    const html = `
+
+        <h2>${tagType}の編集</h2>
+
+        <!-- 名前変更 -->
+        <div class="tag-edit-field">
+
+            <label for="editTagName">
+                名前
+            </label>
+
+            <input
+                id="editTagName"
+                type="text"
+                value="${esc(tag.name)}"
+            >
+
+        </div>
+
+        <!-- 色変更（大タグのみ） -->
+        ${
+            isMajor
+                ? `
+                    <div class="tag-edit-field">
+
+                        <label for="editTagColor">
+                            色
+                        </label>
+
+                        <input
+                            id="editTagColor"
+                            type="color"
+                            value="${esc(tag.color)}"
+                        >
+
+                    </div>
+                `
+                : ''
+        }
+
+        <!-- 所属先変更 -->
+        ${
+            key !== 'majors'
+                ? `
+                    <div class="tag-edit-field">
+
+                        <label for="editTagParent">
+                            専属先
+                        </label>
+
+                        <select id="editTagParent"
+                                onchange="document.getElementById('editTagPosition').value='keep'">
+                            ${parentOptions}
+                        </select>
+
+                    </div>
+                `
+                : ''
+        }
+
+        <!-- 順序変更 -->
+        <div class="tag-edit-field">
+
+            <label for="editTagPosition">
+                順序変更
+            </label>
+
+            <select id="editTagPosition">
+                ${positionOptions}
+            </select>
+
+            <span class="muted">
+                現在の順位：${currentIndex + 1} / ${tags.length}
+            </span>
+
+        </div>
+
+        <!-- 操作ボタン -->
+        <div class="tag-edit-actions">
+
+            <button
+                class="primary"
+                onclick="saveTagEditor('${key}', '${id}')"
+            >
+                保存
+            </button>
+
+            <button
+                class="danger"
+                onclick="deleteTagFromEditor('${key}', '${id}')"
+            >
+                削除
+            </button>
+
+        </div>
+
+    `;
+
+    dialog(html);
+
+}
+
+
+/* ========================================
+   タグ編集内容を保存
+======================================== */
+
+function saveTagEditor(key, id) {
+
+    const p = project();
+
+    const tags = p[key];
+
+    const tag = tags.find(x => x.id === id);
+
+    if (!tag) {
+        return;
+    }
+
+    /* ------------------------------------
+       名前変更
+    ------------------------------------ */
+
+    const newName = $('editTagName').value.trim();
+
+    if (!newName) {
+
+        alert('タグ名を入力してください');
+
+        return;
+    }
+
+    tag.name = newName;
+
+    // ========================================
+    // 所属先の保存
+    // ========================================
+
+    if (key === 'middles') {
+
+        const selected = $('editTagParent').value;
+
+        tag.majorId = selected === 'none'
+            ? null
+            : selected;
+
+    } else if (key === 'minors') {
+
+        const selected = $('editTagParent').value;
+
+        tag.majorId = null;
+        tag.middleId = null;
+
+        if (selected.startsWith('major:')) {
+
+            tag.majorId = selected.slice(6);
+
+        } else if (selected.startsWith('middle:')) {
+
+            tag.middleId = selected.slice(7);
+
+        }
+
+    }
+
+    /* ------------------------------------
+       色変更
+    ------------------------------------ */
+
+    if (key === 'majors') {
+
+        tag.color = $('editTagColor').value;
+
+    }
+
+    /* ------------------------------------
+       順序変更
+    ------------------------------------ */
+
+    const position = $('editTagPosition').value;
+
+    if (position !== 'keep') {
+
+        // 同じ紐付け先か判定
+        function sameParent(a, b) {
+
+            if (key === 'majors') return true;
+
+            if (key === 'middles') {
+                return (a.majorId || null) ===
+                       (b.majorId || null);
+            }
+
+            if (key === 'minors') {
+                return (a.majorId || null) ===
+                           (b.majorId || null)
+                    && (a.middleId || null) ===
+                           (b.middleId || null);
+            }
+
+            return false;
+        }
+
+        // 編集前の所属先を基準に移動可能な範囲を取得
+        const oldTag = tags.find(x => x.id === id);
+
+        const allowedIds = new Set(
+            tags.filter(x => sameParent(x, oldTag))
+                .map(x => x.id)
+        );
+
+        const oldIndex = tags.findIndex(x => x.id === id);
+
+        const [movingTag] = tags.splice(oldIndex, 1);
+
+        let newIndex = oldIndex;
+
+        if (position === 'first') {
+
+            // 同じ紐付け先の先頭へ
+            const firstIndex = tags.findIndex(
+                x => allowedIds.has(x.id)
+            );
+
+            newIndex = firstIndex < 0
+                ? oldIndex
+                : firstIndex;
+
+        } else if (position === 'last') {
+
+            // 同じ紐付け先の最後へ
+            let lastIndex = -1;
+
+            tags.forEach((x, i) => {
+                if (allowedIds.has(x.id)) {
+                    lastIndex = i;
+                }
+            });
+
+            newIndex = lastIndex < 0
+                ? oldIndex
+                : lastIndex + 1;
+
+        } else {
+
+            const [direction, targetId] = position.split(':');
+
+            // 異なる所属先には移動させない
+            if (allowedIds.has(targetId)) {
+
+                const targetIndex = tags.findIndex(
+                    x => x.id === targetId
+                );
+
+                if (targetIndex >= 0) {
+                    newIndex = direction === 'before'
+                        ? targetIndex
+                        : targetIndex + 1;
+                }
+            }
+        }
+
+        tags.splice(newIndex, 0, movingTag);
+    }
+
+    /* ------------------------------------
+       保存と画面更新
+    ------------------------------------ */
+
+    persist();
+
+    $('dialog').close();
+
+    renderTagManagement();
+
+    renderFilters();
+
+    renderAdd();
+
+    renderTable();
+
+}
+
+
+/* ========================================
+   編集画面からタグを削除
+======================================== */
+
+function deleteTagFromEditor(key, id) {
+
+    // 既存の削除処理を使用
+    const before = project()[key].length;
+
+    deleteTag(key, id);
+
+    // 実際に削除された場合だけ閉じる
+    if (project()[key].length < before) {
+
+        $('dialog').close();
+
+    }
+
+}
+
+function renameTag(key, id, name) {
+
+    const x = project()[key].find(t => t.id === id);
+
+    if (!x || !name.trim()) return;
+
+    x.name = name.trim(); persist(); renderFilters(); renderAdd(); renderTable();
+
+}
+
+function addMiddle() {
+
+    const p = project();
+
+    const name = $('newMiddle').value.trim();
+    const selected = $('newMiddleParent').value;
+
+    if (!name) {
+        alert('中タグ名を入力してください');
+        return;
+    }
+
+    const majorId = selected === 'none' ? null : selected;
+
+    const newTag = {
+        id: uid(),
+        name,
+        majorId
+    };
+
+    if (majorId === null) {
+
+        // 共通タグは全体の最後
+        p.middles.push(newTag);
+
+    } else {
+
+        // 同じ大タグに属する最後の中タグを探す
+        const lastIndex = p.middles.findLastIndex(
+            tag => tag.majorId === majorId
+        );
+
+        if (lastIndex === -1) {
+
+            // 追加先の大タグの優先順位
+            const majorIndex = p.majors.findIndex(
+                tag => tag.id === majorId
+            );
+
+            // 自分より優先順位が低い大タグの
+            // 最初の中タグを探す
+            const insertIndex = p.middles.findIndex(tag => {
+
+                const index = p.majors.findIndex(
+                    major => major.id === tag.majorId
+                );
+
+                return index > majorIndex && index !== -1;
+
+            });
+
+            if (insertIndex === -1) {
+                p.middles.push(newTag);
+            } else {
+                p.middles.splice(insertIndex, 0, newTag);
+            }
+
+        } else {
+
+            // 同じ大タグの中タグがある場合は
+            // その最後に追加
+            p.middles.splice(lastIndex + 1, 0, newTag);
+
+        }
+
+    }
+
+    $('newMiddle').value = '';
+
+    // 追加した中タグの紐付け先を表示対象にする
+    const displayValue = majorId
+        ? `major:${majorId}`
+        : 'none';
+
+    $('middleDisplayFilter').value = displayValue;
+
+    persist();
+    renderTagManagement();
+    renderAdd();
+    renderFilters();
+    renderTable();
+
+}
+
+function addMajor() { const name = $('newMajor').value.trim(); if (!name)
+
+    return; project().majors.push({ id: uid(), name, color: $('newColor').value }); $('newMajor').value = ''; persist(); renderTagManagement(); renderAdd(); renderFilters(); renderTable(); }
+
+function addMinor() {
+
+    const p = project();
+
+    const name = $('newMinor').value.trim();
+    const selected = $('newMinorParent').value;
+
+    if (!name) {
+        alert('小タグ名を入力してください');
+        return;
+    }
+
+    let majorId = null;
+    let middleId = null;
+
+    if (selected.startsWith('major:')) {
+        majorId = selected.slice(6);
+    } else if (selected.startsWith('middle:')) {
+        middleId = selected.slice(7);
+    }
+
+    const newTag = {
+        id: uid(),
+        name,
+        majorId,
+        middleId
+    };
+
+    if (middleId) {
+
+        // 同じ中タグに属する最後の小タグを探す
+        const lastIndex = p.minors.findLastIndex(
+            tag => tag.middleId === middleId
+        );
+
+        if (lastIndex === -1) {
+            p.minors.push(newTag);
+        } else {
+            p.minors.splice(lastIndex + 1, 0, newTag);
+        }
+
+    } else if (majorId) {
+
+        // 同じ大タグに属する最後の小タグを探す
+        // 中タグ経由で所属する小タグも含める
+        const lastIndex = p.minors.findLastIndex(tag => {
+
+            if (tag.majorId === majorId) {
+                return true;
+            }
+
+            const middle = p.middles.find(
+                m => m.id === tag.middleId
+            );
+
+            return middle?.majorId === majorId;
+
+        });
+
+        if (lastIndex === -1) {
+            p.minors.push(newTag);
+        } else {
+            p.minors.splice(lastIndex + 1, 0, newTag);
+        }
+
+    } else {
+
+        // 共通タグは全体の最後
+        p.minors.push(newTag);
+
+    }
+
+    $('newMinor').value = '';
+
+    // 追加した小タグの紐付け先を表示対象にする
+    let displayValue = 'none';
+
+    if (middleId) {
+        displayValue = `middle:${middleId}`;
+    } else if (majorId) {
+        displayValue = `major:${majorId}`;
+    }
+
+    $('minorDisplayFilter').value = displayValue;
+
+    persist();
+    renderTagManagement();
+    renderAdd();
+    renderFilters();
+    renderTable();
+
+}
+
+function updateMajor(id, k, v) { const x = project().majors.find(x => x.id === id); if (x) {
+
+    x[k] = v;
+
+    persist();
+
+    renderFilters();
+
+    renderTable();
+
+} }
+
+function updateMinor(id, v) { const x = project().minors.find(x => x.id === id); if (x) {
+
+    x.name = v;
+
+    persist();
+
+    renderFilters();
+
+} }
+
+function moveTag(k, i, d) { const a = project()[k], j = i + d; if (j < 0 || j >= a.length)
+
+    return; [a[i], a[j]] = [a[j], a[i]]; persist(); renderTagManagement(); renderAdd(); renderFilters(); renderTable(); }
+
+function deleteTag(k, id) { const p = project(); if (k === 'majors' && p.majors.length === 1)
+
+    return alert('大タグは最低1つ必要です'); if (!confirm('タグを削除しますか？ 関連する登録は残ります。'))
+
+    return; p[k] = p[k].filter(x => x.id !== id); if (k === 'majors')
+
+    p.entries.forEach(e => { if (e.majorId === id)
+
+        e.majorId = p.majors[0].id; });
+
+else if (k === 'middles') p.entries.forEach(e => e.middleIds = (e.middleIds || []).filter(x => x !== id));
+
+else p.entries.forEach(e => e.minorIds = e.minorIds.filter(x => x !== id)); persist(); renderTagManagement(); renderAdd(); renderFilters(); renderTable(); }
+
+function memo() { const p = project(); return p.memos.find(m => m.id === p.memoId) || p.memos[0]; }
+
+function normalizeMemoColumns(m) {
+    m.colModes ||= m.cols.map(() => m.mode || 'check');
+    m.colStates ||= m.cols.map(() => null);
+
+    m.colModes = m.cols.map((_, i) =>
+        m.colModes[i] || m.mode || 'check'
+    );
+
+    m.colStates = m.cols.map((_, i) =>
+        m.colStates[i] ?? null
+    );
+}
+
+function memoColumnStates(m, i) {
+    return m.colStates[i] || m.states;
+}
+
+function renderMemo() {
+    const p = project();
+    const m = memo();
+
+    normalizeMemoColumns(m);
+
+    $('memoSelect').innerHTML = p.memos.map(x =>
+        `<option value="${x.id}">${esc(x.name)}</option>`
+    ).join('');
+
+    $('memoSelect').value = m.id;
+    $('cellMode').value = m.mode || 'check';
+
+    $('stateFilter').innerHTML =
+        '<option value="all">すべて</option>' +
+        m.states.map((s, i) =>
+            `<option value="${i}">${esc(s.name)}</option>`
+        ).join('');
+
+    drawMemo();
+}
+
+$('memoSelect').onchange = e => { project().memoId = e.target.value; selectedCell = null; persist(); renderMemo(); };
+
+$('cellMode').onchange = e => { memo().mode = e.target.value; persist(); renderMemo(); };
+
+$('stateFilter').onchange = drawMemo;
+
+function drawMemo() {
+    const m = memo();
+    normalizeMemoColumns(m);
+
+    const filter = $('stateFilter').value;
+
+    let html = `
+        <table>
+        <thead>
+        <tr>
+            <th>縦軸 ＼ 横軸</th>
+            ${m.cols.map((c, i) => `
+                <th>
+                    <button onclick="axisMenu('col',${i})">
+                        ${esc(c)}
+                    </button>
+                </th>
+            `).join('')}
+        </tr>
+        </thead>
+        <tbody>
+    `;
+
+    m.rows.forEach((r, i) => {
+        html += `
+            <tr data-memo-row="${i}">
+                <th>
+                    <button onclick="axisMenu('row',${i})">
+                        ${esc(r)}
+                    </button>
+                </th>
+        `;
+
+        m.cols.forEach((c, j) => {
+            const key = `${i}:${j}`;
+            const mode = m.colModes[j];
+            const states = memoColumnStates(m, j);
+
+            const raw = m.cells[key] ?? 0;
+            const v = raw >= 0 && raw < states.length ? raw : 0;
+            const state = states[v] || states[0];
+
+            let content;
+
+            if (mode === 'text') {
+                content = `
+                    <input
+                        type="text"
+                        value="${esc(String(raw ?? ''))}"
+                        placeholder="自由入力"
+                        oninput="setTextCell('${key}',this.value)"
+                        style="
+                            width:100%;
+                            min-width:100px;
+                            background:#fff;
+                        "
+                    >
+                `;
+            } else if (mode === 'check') {
+                content = `
+                    <label>
+                        <input type="checkbox"
+                            ${v === 1 ? 'checked' : ''}
+                            onchange="setCell('${key}',this.checked?1:0)">
+                        ${esc(state.name)}
+                    </label>
+                `;
+            } else {
+                content = `
+                    <select onchange="setCell('${key}',Number(this.value))">
+                        ${states.map((s, k) => `
+                            <option value="${k}" ${k === v ? 'selected' : ''}>
+                                ${esc(s.name)}
+                            </option>
+                        `).join('')}
+                    </select>
+                `;
+            }
+
+            html += `
+                <td style="
+                    background:${mode === 'text' ? '#ffffff' : state.color};
+                    ${mode !== 'text' && filter !== 'all' && String(v) !== filter
+                        ? 'opacity:.22;' : ''}
+                ">
+                    ${content}
+                </td>
+            `;
+        });
+
+        html += '</tr>';
+    });
+
+    $('memoTable').innerHTML = html + '</tbody></table>';
+
+    if ($('memoRowSearch').value.trim()) {
+        searchMemoRow();
+    }
+}
+
+function searchMemoRow(jump = false) {
+    const input = $('memoRowSearch');
+    const result = $('memoRowSearchResult');
+    const tableWrap = $('memoTable');
+
+    const keyword = normalizeMemoSearch(input.value);
+
+    // 前回の枠を解除
+    tableWrap.querySelectorAll('tr[data-memo-row]').forEach(tr => {
+        tr.style.outline = '';
+        tr.style.outlineOffset = '';
+    });
+
+    if (!keyword) {
+        result.textContent = '';
+        return;
+    }
+
+    const m = memo();
+
+    // 正規化した文字列で部分一致検索
+    const index = m.rows.findIndex(name =>
+        normalizeMemoSearch(name).includes(keyword)
+    );
+
+    if (index === -1) {
+        result.textContent = '該当なし';
+        return;
+    }
+
+    const row = tableWrap.querySelector(
+        `tr[data-memo-row="${index}"]`
+    );
+
+    if (!row) return;
+
+    // 入力中も該当行に枠を付ける
+    row.style.outline = '2px solid #3278df';
+    row.style.outlineOffset = '-2px';
+
+    result.textContent = `${index + 1}行目`;
+
+    // 決定時だけスクロール
+    if (jump) {
+        const header = tableWrap.querySelector('thead');
+        const headerHeight = header
+            ? header.getBoundingClientRect().height
+            : 0;
+
+        const rowTop = row.getBoundingClientRect().top;
+        const wrapTop = tableWrap.getBoundingClientRect().top;
+
+        tableWrap.scrollTop += rowTop - wrapTop - headerHeight;
+    }
+}
+
+// 縦軸検索用の文字正規化
+function normalizeMemoSearch(text) {
+    return String(text ?? '')
+        .normalize('NFKC')
+        .toLocaleLowerCase('ja')
+        .replace(/[\u3041-\u3096]/g, c =>
+            String.fromCharCode(c.charCodeAt(0) + 0x60)
+        )
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function setCell(key, v) { memo().cells[key] = v; selectedCell = key; persist(); drawMemo(); }
+
+function setTextCell(key, value) {
+    const m = memo();
+
+    m.cells[key] = value;
+    selectedCell = key;
+
+    persist();
+}
+
+function newMemo() {
+
+    const name = prompt('新しい表の名前');
+
+    if (!name?.trim()) return;
+
+    const p = project();
+
+    const m = freshMemo();
+
+    m.name = name.trim();
+
+    p.memos.push(m);
+
+    p.memoId = m.id;
+
+    selectedCell = null;
+
+    persist();
+
+    renderMemo();
+}
+
+function renameMemo() { const m = memo(), v = prompt('表の名前', m.name); if (v?.trim()) {
+
+    m.name = v.trim();
+
+    persist();
+
+    renderMemo();
+
+} }
+
+function deleteMemo() { const p = project(); if (p.memos.length === 1)
+
+    return alert('最低1表必要です'); if (!confirm('表を削除しますか？'))
+
+    return; p.memos = p.memos.filter(x => x.id !== memo().id); p.memoId = p.memos[0].id; persist(); renderMemo(); }
+
+function shiftCells(m, axis, index, delta, remove = false) { const out = {}; for (const [k, v] of Object.entries(m.cells)) {
+
+    let [i, j] = k.split(':').map(Number);
+
+    let n = axis === 'row' ? i : j;
+
+    if (remove && n === index)
+
+        continue;
+
+    if (remove && n > index)
+
+        n--;
+
+    else if (!remove && n >= index)
+
+        n++;
+
+    if (axis === 'row')
+
+        i = n;
+
+    else
+
+        j = n;
+
+    out[`${i}:${j}`] = v;
+
+} m.cells = out; }
+
+function insertAxis(axis, index) {
+    const m = memo();
+    normalizeMemoColumns(m);
+
+    const arr = axis === 'row' ? m.rows : m.cols;
+    index = index ?? arr.length;
+
+    const name = prompt(
+        axis === 'row' ? '行名' : '列名',
+        `${axis === 'row' ? '行' : '列'}${arr.length + 1}`
+    );
+
+    if (name === null) return;
+
+    shiftCells(m, axis, index, 1);
+    arr.splice(index, 0, name || '無題');
+
+    if (axis === 'col') {
+        m.colModes.splice(index, 0, m.mode || 'check');
+        m.colStates.splice(index, 0, null);
+    }
+
+    persist();
+    drawMemo();
+}
+
+// タグから縦軸を作成する設定画面
+function openMemoTagRows() {
+    const p = project();
+
+    dialog(`
+        <h2>タグから縦軸を作成</h2>
+
+        <div class="tag-edit-field">
+            <label>親タグの種類</label>
+            <select id="memoTagType"
+                    onchange="updateMemoTagParents()">
+                <option value="major">大タグ → 中タグ</option>
+                <option value="middle">中タグ → 小タグ</option>
+            </select>
+        </div>
+
+        <div class="tag-edit-field">
+            <label>親タグを選択</label>
+            <select id="memoTagParent"></select>
+        </div>
+
+        <p class="muted">
+            選択したタグに紐付く下位タグを、
+            優先順位順に縦軸へ配置します。
+        </p>
+
+        <div class="flex">
+            <button class="primary"
+                    onclick="applyMemoTagRows()">
+                縦軸に配置
+            </button>
+        </div>
+    `);
+
+    updateMemoTagParents();
+}
+
+// 親タグの候補を更新
+function updateMemoTagParents() {
+    const p = project();
+
+    const type = $('memoTagType').value;
+    const select = $('memoTagParent');
+
+    const tags = type === 'major'
+        ? p.majors
+        : p.middles;
+
+    select.innerHTML = tags.map(tag => `
+        <option value="${esc(tag.id)}">
+            ${esc(tag.name)}
+        </option>
+    `).join('');
+}
+
+// 選択したタグの下位タグを縦軸に配置
+function applyMemoTagRows() {
+    const p = project();
+    const m = memo();
+
+    const type = $('memoTagType').value;
+    const parentId = $('memoTagParent').value;
+
+    if (!parentId) {
+        alert('親タグを選択してください');
+        return;
+    }
+
+    let tags;
+
+    if (type === 'major') {
+        // 大タグに直接紐付く中タグ
+        tags = p.middles.filter(
+            tag => tag.majorId === parentId
+        );
+    } else {
+        // 中タグに直接紐付く小タグ
+        tags = p.minors.filter(
+            tag => tag.middleId === parentId
+        );
+    }
+
+    if (!tags.length) {
+        alert('紐付くタグがありません');
+        return;
+    }
+
+    // 既存の行を置き換えるため確認
+    if (!confirm(
+        `${tags.length}個のタグを縦軸に配置します。\n` +
+        '現在の行とセルの入力内容は置き換えられます。\n' +
+        'よろしいですか？'
+    )) {
+        return;
+    }
+
+    // タグ順番指定の配列順をそのまま使用
+    m.rows = tags.map(tag => tag.name);
+
+    // 行が変わるため既存のセル値を初期化
+    m.cells = {};
+
+    selectedCell = null;
+
+    persist();
+
+    $('dialog').close();
+
+    renderMemo();
+}
+
+function axisMenu(axis, i) {
+    const m = memo();
+    normalizeMemoColumns(m);
+
+    const arr = axis === 'row' ? m.rows : m.cols;
+    const mode = axis === 'col' ? m.colModes[i] : null;
+
+    dialog(`
+        <div style="
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            margin-bottom:16px;
+        ">
+            <h2 style="margin:0">
+                ${axis === 'row' ? '行' : '列'}：${esc(arr[i])}
+            </h2>
+
+            <button
+                type="button"
+                class="dialog-back-button"
+                onclick="$('dialog').close()"
+            >
+                ← 戻る
+            </button>
+        </div>
+
+        ${axis === 'col' ? `
+            <div class="flex" style="margin-bottom:12px">
+                <label>
+                    表示形式
+                    <select onchange="setColMode(${i},this.value)">
+                        <option value="check"
+                            ${mode === 'check' ? 'selected' : ''}>
+                            チェックボックス
+                        </option>
+                        <option value="select"
+                            ${mode === 'select' ? 'selected' : ''}>
+                            プルダウン
+                        </option>
+                        <option value="text"
+                            ${mode === 'text' ? 'selected' : ''}>
+                            自由入力
+                        </option>
+                    </select>
+                </label>
+            </div>
+
+            ${mode === 'select' ? `
+                <button onclick="editColStates(${i})">
+                    この列の選択肢・色を設定
+                </button>
+            ` : ''}
+        ` : ''}
+
+        <div class="flex" style="margin-top:15px">
+            <button onclick="axisAction('${axis}',${i},'rename')">名前変更</button>
+            <button onclick="axisAction('${axis}',${i},'before')">前に挿入</button>
+            <button onclick="axisAction('${axis}',${i},'after')">後に挿入</button>
+            <button onclick="axisAction('${axis}',${i},'up')">前へ移動</button>
+            <button onclick="axisAction('${axis}',${i},'down')">後へ移動</button>
+            <button class="danger"
+                onclick="axisAction('${axis}',${i},'delete')">削除</button>
+        </div>
+    `);
+}
+
+function setColMode(i, mode) {
+    const m = memo();
+    normalizeMemoColumns(m);
+
+    const oldMode = m.colModes[i];
+    m.colModes[i] = mode;
+
+    // テキスト形式から状態形式に戻すときは
+    // 数値以外の内容を初期値にする
+    if (oldMode === 'text' && mode !== 'text') {
+        m.rows.forEach((_, r) => {
+            const key = `${r}:${i}`;
+            const value = m.cells[key];
+
+            if (
+                typeof value !== 'number' ||
+                !Number.isInteger(value) ||
+                value < 0
+            ) {
+                m.cells[key] = 0;
+            }
+        });
+    }
+
+    // チェックボックスは0または1のみ
+    if (mode === 'check') {
+        m.rows.forEach((_, r) => {
+            const key = `${r}:${i}`;
+
+            if ((m.cells[key] ?? 0) > 1) {
+                m.cells[key] = 0;
+            }
+        });
+    }
+
+    persist();
+    drawMemo();
+    $('dialog').close();
+    axisMenu('col', i);
+}
+
+function editColStates(i) {
+    const m = memo();
+    normalizeMemoColumns(m);
+
+    // 初回編集時は共通設定をコピー
+    if (!m.colStates[i]) {
+        m.colStates[i] = m.states.map(s => ({ ...s }));
+        persist();
+    }
+
+    const states = m.colStates[i];
+
+    $('dialogContent').innerHTML = `
+        <h2>${esc(m.cols[i])}：選択肢・色の設定</h2>
+
+        ${states.map((s, k) => `
+            <div class="flex subrow">
+                <input value="${esc(s.name)}"
+                    onchange="changeColState(${i},${k},'name',this.value)">
+
+                <input type="color" value="${esc(s.color)}"
+                    onchange="changeColState(${i},${k},'color',this.value)">
+
+                ${states.length > 1 ? `
+                    <button class="danger"
+                        onclick="removeColState(${i},${k})">
+                        削除
+                    </button>
+                ` : ''}
+            </div>
+        `).join('')}
+
+        <div class="flex">
+            <button onclick="addColState(${i})">選択肢を追加</button>
+            <button onclick="axisMenu('col',${i})">戻る</button>
+        </div>
+    `;
+}
+
+function changeColState(i, k, field, value) {
+    const m = memo();
+    normalizeMemoColumns(m);
+
+    m.colStates[i][k][field] = value;
+
+    persist();
+    drawMemo();
+}
+
+function addColState(i) {
+    const m = memo();
+    normalizeMemoColumns(m);
+
+    if (!m.colStates[i]) {
+        m.colStates[i] = m.states.map(s => ({ ...s }));
+    }
+
+    m.colStates[i].push({
+        name: '新しい選択肢',
+        color: '#fff2bd'
+    });
+
+    persist();
+    drawMemo();
+    editColStates(i);
+}
+
+function removeColState(i, k) {
+    const m = memo();
+    normalizeMemoColumns(m);
+
+    const states = m.colStates[i];
+    if (!states || states.length <= 1) return;
+
+    states.splice(k, 1);
+
+    m.rows.forEach((_, r) => {
+        const key = `${r}:${i}`;
+        const v = m.cells[key] ?? 0;
+
+        if (v === k) {
+            m.cells[key] = 0;
+        } else if (v > k) {
+            m.cells[key] = v - 1;
+        }
+    });
+
+    persist();
+    drawMemo();
+    editColStates(i);
+}
+
+function axisAction(axis, i, action) {
+    const m = memo();
+    normalizeMemoColumns(m);
+
+    const arr = axis === 'row' ? m.rows : m.cols;
+
+    $('dialog').close();
+
+    if (action === 'before' || action === 'after') {
+        return insertAxis(axis, i + (action === 'after' ? 1 : 0));
+    }
+
+    if (action === 'rename') {
+        const v = prompt('名前', arr[i]);
+        if (v === null) return;
+        arr[i] = v;
+    }
+
+    else if (action === 'delete') {
+        if (arr.length === 1) {
+            alert('最低1つ必要です');
+            return;
+        }
+
+        if (!confirm('削除しますか？')) return;
+
+        arr.splice(i, 1);
+
+        if (axis === 'col') {
+            m.colModes.splice(i, 1);
+            m.colStates.splice(i, 1);
+        }
+
+        shiftCells(m, axis, i, -1, true);
+    }
+
+    else {
+        const j = i + (action === 'up' ? -1 : 1);
+
+        if (j < 0 || j >= arr.length) return;
+
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+
+        if (axis === 'col') {
+            [m.colModes[i], m.colModes[j]] =
+                [m.colModes[j], m.colModes[i]];
+
+            [m.colStates[i], m.colStates[j]] =
+                [m.colStates[j], m.colStates[i]];
+        }
+
+        const out = {};
+
+        for (const [key, value] of Object.entries(m.cells)) {
+            let [r, c] = key.split(':').map(Number);
+
+            if (axis === 'row') {
+                if (r === i) r = j;
+                else if (r === j) r = i;
+            } else {
+                if (c === i) c = j;
+                else if (c === j) c = i;
+            }
+
+            out[`${r}:${c}`] = value;
+        }
+
+        m.cells = out;
+    }
+
+    persist();
+    drawMemo();
+}
+
+function editStates() { const m = memo(); dialog(`<h2>状態と色</h2>${m.states.map((s, i) => `<div class="flex subrow"><input value="${esc(s.name)}" onchange="changeState(${i},'name',this.value)"><input type="color" value="${s.color}" onchange="changeState(${i},'color',this.value)">${i > 1 ? `<button class="danger" onclick="removeState(${i})">削除</button>` : ''}</div>`).join('')}<button onclick="addState()">状態追加</button><p class="muted">チェック式では未設定・完了の2状態を使用します。</p>`); }
+
+function changeState(i, k, v) { memo().states[i][k] = v; persist(); drawMemo(); }
+
+function addState() { memo().states.push({ name: '新しい状態', color: '#fff2bd' }); persist(); editStates(); drawMemo(); }
+
+function removeState(i) { const m = memo(); m.states.splice(i, 1); for (const k in m.cells) {
+
+    if (m.cells[k] === i)
+
+        m.cells[k] = 0;
+
+    else if (m.cells[k] > i)
+
+        m.cells[k]--;
+
+} persist(); editStates(); drawMemo(); }
+
+function exportData() { const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'kanji-note-backup.json'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+
+let importBackup = null;
+
+// JSONファイルを選択したとき
+$('importFile').onchange = async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+
+    if (!file) return;
+
+    try {
+        const data = JSON.parse(await file.text());
+
+        if (
+            !data ||
+            !Array.isArray(data.projects) ||
+            !data.projects.length
+        ) {
+            throw Error('対応していないJSONファイルです');
+        }
+
+        importBackup = data;
+        openImportDialog();
+
+    } catch (err) {
+        alert('読み込み失敗：' + err.message);
+    }
+};
+
+// 読み込み設定画面
+function openImportDialog() {
+    if (!importBackup) return;
+
+    dialog(`
+        <h2>集計データの読み込み</h2>
+
+        <div class="tag-edit-field">
+            <label>バックアップから読み込む集計</label>
+            <select id="importSource"></select>
+        </div>
+
+        <div class="tag-edit-field">
+            <label>読み込み方法</label>
+            <select id="importMode"
+                onchange="updateImportMode()">
+                <option value="add">
+                    新しい集計として追加
+                </option>
+                <option value="replace">
+                    指定した集計に上書き
+                </option>
+            </select>
+        </div>
+
+        <div class="tag-edit-field"
+            id="importTargetWrap"
+            style="display:none">
+            <label>上書きする集計</label>
+            <select id="importTarget"></select>
+        </div>
+
+        <p class="muted" id="importDescription"></p>
+
+        <div class="flex">
+            <button class="primary"
+                onclick="executeImport()">
+                読み込む
+            </button>
+        </div>
+    `);
+
+    const source = $('importSource');
+    const target = $('importTarget');
+
+    importBackup.projects.forEach((p, i) => {
+        source.add(new Option(p.name || `集計${i + 1}`, i));
+    });
+
+    db.projects.forEach(p => {
+        target.add(new Option(p.name, p.id));
+    });
+
+    target.value = project().id;
+
+    updateImportMode();
+}
+
+// 読み込み方法による表示切り替え
+function updateImportMode() {
+    const replace = $('importMode').value === 'replace';
+
+    $('importTargetWrap').style.display =
+        replace ? 'flex' : 'none';
+
+    $('importDescription').textContent = replace
+        ? '指定した集計だけを上書きします。他の集計は変更しません。'
+        : '現在の集計を残したまま、新しい集計として追加します。';
+}
+
+// 読み込み実行
+function executeImport() {
+    if (!importBackup) return;
+
+    const index = Number($('importSource').value);
+    const mode = $('importMode').value;
+
+    const source = importBackup.projects[index];
+
+    if (!source || !Array.isArray(source.entries)) {
+        alert('集計データの形式が正しくありません');
+        return;
+    }
+
+    // バックアップのデータをコピー
+    const imported = JSON.parse(JSON.stringify(source));
+
+    normalizeProject(imported);
+
+    if (mode === 'add') {
+
+        // 新しい集計IDを発行
+        imported.id = uid();
+
+        // 同名の集計がある場合は区別する
+        if (db.projects.some(p => p.name === imported.name)) {
+            imported.name += '（読み込み）';
+        }
+
+        db.projects.push(imported);
+        db.current = imported.id;
+
+    } else if (mode === 'replace') {
+
+        const targetId = $('importTarget').value;
+
+        const targetIndex = db.projects.findIndex(
+            p => p.id === targetId
+        );
+
+        if (targetIndex === -1) {
+            alert('上書き先が見つかりません');
+            return;
+        }
+
+        const targetName = db.projects[targetIndex].name;
+
+        if (!confirm(
+            `「${targetName}」のデータを上書きしますか？\n` +
+            'この集計の現在の登録内容は失われます。'
+        )) {
+            return;
+        }
+
+        // 上書き先のIDと名前を維持
+        imported.id = targetId;
+        imported.name = targetName;
+
+        db.projects[targetIndex] = imported;
+        db.current = targetId;
+
+    } else {
+        return;
+    }
+
+    // 登録順番号の重複を防ぐ
+    const maxSeq = Math.max(
+        0,
+        ...db.projects.flatMap(p =>
+            (p.entries || []).map(e =>
+                Number.isFinite(e.seq) ? e.seq : 0
+            )
+        )
+    );
+
+    db.sequence = Math.max(db.sequence || 0, maxSeq + 1);
+
+    editId = null;
+    selectedCell = null;
+
+    persist();
+
+    $('dialog').close();
+
+    importBackup = null;
+
+    renderAll();
+
+    alert('集計データを読み込みました');
+}
+
+function renderAll() { renderProjects(); renderFilters(); renderAdd(); renderTagManagement(); renderTable(); renderMemo(); }
+
+async function initializeApp() {
+
+    document.body.inert = true;
+
+    try {
+
+        // 保存データの読み込み・自動移行
+        db = await loadDatabase();
+
+        // 既存データの形式を整える
+        db.projects.forEach(normalizeProject);
+
+        // デフォルト集計を開く
+        if (
+            db.defaultId &&
+            db.projects.some(p => p.id === db.defaultId)
+        ) {
+            db.current = db.defaultId;
+        }
+
+        // 常用漢字の優先順位整理
+        db.projects.forEach(pruneLowerPriorityStandard);
+
+        // 初回保存
+        await persist();
+
+        // 全画面を表示
+        renderAll();
+
+        document.body.inert = false;
+
+    } catch (e) {
+
+        console.error('初期化エラー:', e);
+
+        alert(
+            'データの読み込みに失敗しました。\n' +
+            '既存の保存データは削除していません。\n\n' +
+            'エラー：' + (e?.message || e)
+        );
+
+    }
+}
+
+initializeApp();
+  </script>
+ </body>
+</html>
